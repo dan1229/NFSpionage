@@ -1,0 +1,5 @@
+atpublic==1.0
+kamene==0.32
+libpcap==1.10.0b10
+psutil==5.7.0
+scapy-python3==0.26
