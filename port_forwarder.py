@@ -4,10 +4,9 @@ import threading
 
 
 from nfs_mitm_api import NfsMitmApi
-from scapy.scapy.compat import raw
-from scapy.scapy.contrib.mount import MOUNT_Call
-from scapy.scapy.contrib.oncrpc import RPC
-from scapy.scapy.supersocket import SuperSocket
+from scapy.compat import raw
+from scapy.contrib.mount import MOUNT_Call
+from scapy.contrib.oncrpc import RPC
 
 
 def tuple_to_addr(address):
@@ -43,7 +42,6 @@ class MitmForwarder:
 
     # create tcp servers to listen for and forward connections to target
     def tcp_proxy(self, target_host, target_port):
-        SuperSocket()
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(('', target_port))
