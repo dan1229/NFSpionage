@@ -2,8 +2,7 @@ import _thread
 import socket
 import threading
 
-
-from nfs_mitm_api import NfsMitmApi
+from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
@@ -132,7 +131,7 @@ class MitmForwarder:
         path = self.filter_mount_path(data)
         if path != -1:
             print("[* INF ] starting NFS MITM API on path \'" + path + "\'")
-            _thread.start_new_thread(NfsMitmApi, (remote_ip, path))
+            _thread.start_new_thread(NfspionageApi, (remote_ip, path))
 
     @staticmethod
     def filter_mount_port(data):

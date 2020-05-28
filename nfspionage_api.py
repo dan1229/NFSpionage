@@ -6,14 +6,14 @@ import socket
 # see text_client.py for example on basic connection and usage
 
 
-class NfsMitmApi:
+class NfspionageApi:
     nfs_context = None
     port = 2050
 
     def __init__(self, nfs_server_ip, mount_path):
         if mount_path[0] != '/':
             mount_path = '/' + mount_path
-            
+
         self.mount_url = 'nfs://' + nfs_server_ip + mount_path
 
         print("// ========================================")
