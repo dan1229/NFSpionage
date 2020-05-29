@@ -1,6 +1,6 @@
 # NFSpionage
 
-![](./logo.png =250x)
+![](./logo.png | width=200)
 
 ## Description
 NFSpionage is a tool designed to work in tandem during a Man-In-The-Middle attack to hijack and spoof an active, intercepted Network File System (NFS) connections.
