@@ -1,6 +1,6 @@
 # NFSpionage
 
-![](./logo.png){:height="200px"}
+![](./logo.png)
 
 
 ## Description
