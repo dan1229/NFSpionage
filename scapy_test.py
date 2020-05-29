@@ -1,20 +1,24 @@
 from datetime import datetime
 
+from scapy.layers.inet import IP
 from scapy.sendrecv import sniff
 
 
 def forward_packet(packet):
 	now = datetime.now()
-	print("\t" + str(now) + " packet: " + str(packet))
+	print("\t" + str(now) + "\n")
+	print("\tSRC: " + str(packet[IP].src) + "\n")
+	print("\tDST: " + str(packet[IP].dst) + "\n")
 
 
 def network_listen(ip_addr, port):
-	scapy_filter = "port 80"
-	print("FILTER: " + scapy_filter)
+	filter = "tcp"
+	print("FILTER: \'" + str(filter) + "\'")
 	while True:
-		print("listening...")
-		packet = sniff(count=1)
-		print("\tpacket: " + str(packet))
+		packets = sniff(count=1, filter=filter)
+		print("=============================================")
+		print("packet: " + str(packets))
+		forward_packet(packets.res[0])
 
 
 if __name__ == '__main__':
