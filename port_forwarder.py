@@ -44,7 +44,7 @@ class MitmForwarder:
 
     # create tcp servers to listen for and forward connections to target
     def packet_listen(self, target_host, target_port, protocol="TCP"):
-        packet_filter = protocol + " and port " + str(target_port)
+        packet_filter = str(protocol).lower() + " and port " + str(target_port)
         while True:
             packets = sniff(count=1, filter=packet_filter)
             packet = packets.res[0]
