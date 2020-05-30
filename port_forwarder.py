@@ -8,33 +8,27 @@ from scapy.layers.inet import IP, TCP, UDP
 from scapy.sendrecv import sniff, send
 
 
-def get_protocol(protocol):
-    if protocol.lower() == "tcp":
-        return TCP
-    else:
-        return UDP
-
-
 # @PARAM
 # packet        scapy       packet object
 # protocol      string      TCP, UDP
 # dir           int         0 - no, get dst
 #                           1 - yes, get src
-def print_ip_addr(packet, protocol='TCP', src=0):
-    print("PROT: " + str(protocol) + ", src: " + str(src))
-    protocol_scapy = get_protocol(protocol)
+def print_ip_addr(packet, protocol=TCP, src=0):
     if src == 1:  # src
         res = packet[IP].src
     else:  # dst
         res = packet[IP].dst
 
-    if protocol_scapy in packet:
-        print("\t" + protocol + " is in " + str(packet))
+    if protocol in packet:
         if src == 1:  # src
-            res += ":" + str(packet[protocol_scapy].sport)
+            res += ":" + str(packet[protocol].sport)
         else:  # dst
-            res += ":" + str(packet[protocol_scapy].dport)
+            res += ":" + str(packet[protocol].dport)
     return res
+
+
+def print_packet_transfer(protocol, packet):
+    print("[+ " + str(protocol) + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
 
 
 class MitmForwarder:
@@ -48,16 +42,18 @@ class MitmForwarder:
         print("// [*] REM Addr:\t" + remote_ip + ":" + str(port))
         if udp:
             print("// [*] PROT:\t\tUDP")
-            self.packet_listen(remote_ip, port, protocol="UDP")
+            self.packet_listen(remote_ip, port, protocol=UDP)
         else:
             print("// [*] PROT:\t\tTCP")
-            self.packet_listen(remote_ip, port, protocol="TCP")
+            self.packet_listen(remote_ip, port, protocol=TCP)
         print("// ========================================")
 
     # ==================== PACKET FORWARDING ==================== #
 
     # create tcp servers to listen for and forward connections to target
-    def packet_listen(self, target_host, target_port, protocol="TCP"):
+    def packet_listen(self, target_host, target_port, protocol=TCP):
+        # TODO start fake socket listener to accept packets?
+
         packet_filter = str(protocol).lower() + " and port " + str(target_port)
         while True:
             print("=========================================")
@@ -65,12 +61,13 @@ class MitmForwarder:
             packet = packets.res[0]
             print("PACKET: " + str(packet))
             if packet[IP].src != target_host:  # packet is NOT from target host, change src IP
-                # TODO change src ip
-                # packet[IP].src = client_address  # how to get client address?
+                # TODO change src ip - how to get addr
+                # packet[IP].src = client_address
+                # packet[protocol].sport = client_sport
                 pass
             else:  # packets is from target host, filter for possible information
                 self.filter_packets(str(packet), packet[IP].dst)
-            print("[+ " + protocol + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
+            print_packet_transfer(protocol, packet)
             send(packet)
 
     # ==================== PACKET FILTERING ==================== #
