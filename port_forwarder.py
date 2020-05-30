@@ -21,6 +21,7 @@ def get_protocol(protocol):
 # dir           int         0 - no, get dst
 #                           1 - yes, get src
 def print_ip_addr(packet, protocol='TCP', src=0):
+    print("PROT: " + str(protocol) + ", src: " + str(src))
     protocol_scapy = get_protocol(protocol)
     if src == 1:  # src
         res = packet[IP].src
@@ -28,6 +29,7 @@ def print_ip_addr(packet, protocol='TCP', src=0):
         res = packet[IP].dst
 
     if protocol_scapy in packet:
+        print("\t" + protocol + " is in " + str(packet))
         if src == 1:  # src
             res += ":" + packet[protocol_scapy].src
         else:  # dst
@@ -58,8 +60,10 @@ class MitmForwarder:
     def packet_listen(self, target_host, target_port, protocol="TCP"):
         packet_filter = str(protocol).lower() + " and port " + str(target_port)
         while True:
+            print("=========================================")
             packets = sniff(count=1, filter=packet_filter)
             packet = packets.res[0]
+            print("PACKET: " + str(packet))
             if packet[IP].src != target_host:  # packet is NOT from target host, change src IP
                 # TODO change src ip
                 pass
