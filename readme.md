@@ -10,9 +10,9 @@ NFSpionage is a tool designed to work in tandem during a Man-In-The-Middle attac
 - Full CRUD functionality for remote NFS 
 - TCP and UDP packet forwarding
 - Packet processing and forging (via scapy)
-- IP Spoofing
+- Client IP address spoofing
 - Text based client for basic filesystem interaction
-- Socket based API for sharing credentials with other applications
+- Socket based API for sharing credentials with other programs
 <br>
 <br>
 

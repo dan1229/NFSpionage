@@ -4,23 +4,25 @@ from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
+from scapy.layers.inet import IP, TCP, UDP
 from scapy.sendrecv import sniff, send
 
 
-def tuple_to_addr(address):
-    return str(address[0]) + ":" + str(address[1])
-
-
-def handle(buffer):
-    return buffer
+def get_protocol(protocol):
+    if protocol.lower() == "tcp":
+        return TCP
+    else:
+        return UDP
 
 
 def get_full_src_addr(packet, protocol='TCP'):
-    return packet['IP'].src + ":" + packet[protocol].src
+    protocol_scapy = get_protocol(protocol)
+    return packet[IP].src + ":" + packet[protocol_scapy].src
 
 
 def get_full_dst_addr(packet, protocol='TCP'):
-    return packet['IP'].dst + ":" + packet[protocol].dst
+    protocol_scapy = get_protocol(protocol)
+    return packet['IP'].dst + ":" + packet[protocol_scapy].dst
 
 
 class MitmForwarder:
@@ -48,11 +50,11 @@ class MitmForwarder:
         while True:
             packets = sniff(count=1, filter=packet_filter)
             packet = packets.res[0]
-            if packet['IP'].src != target_host:  # packet is NOT from target host, change src IP
+            if packet[IP].src != target_host:  # packet is NOT from target host, change src IP
                 # TODO change src ip
                 pass
             else:  # packets is from target host
-                self.filter_packets(str(packet), packet['IP'].dst)
+                self.filter_packets(str(packet), packet[IP].dst)
             print("[+ " + protocol + " ] " + get_full_src_addr(packet) + " >>> " + get_full_dst_addr(packet) + " [" + str(len(packet)) + "]")
             send(packet)
 
