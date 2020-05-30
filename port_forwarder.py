@@ -15,14 +15,24 @@ def get_protocol(protocol):
         return UDP
 
 
-def get_full_src_addr(packet, protocol='TCP'):
+# @PARAM
+# packet        scapy       packet object
+# protocol      string      TCP, UDP
+# dir           int         1 - src
+#                           2 - dst
+def print_ip_addr(packet, protocol='TCP', dir=1):
     protocol_scapy = get_protocol(protocol)
-    return packet[IP].src + ":" + packet[protocol_scapy].src
+    if dir == 1:  # src
+        res = packet[IP].src
+    else:  # dst
+        res = packet[IP].dst
 
-
-def get_full_dst_addr(packet, protocol='TCP'):
-    protocol_scapy = get_protocol(protocol)
-    return packet['IP'].dst + ":" + packet[protocol_scapy].dst
+    if protocol_scapy in packet:
+        if dir == 1:  # src
+            res += ":" + packet[protocol_scapy].src
+        else:  # dst
+            res += ":" + packet[protocol_scapy].dst
+    return res
 
 
 class MitmForwarder:
@@ -55,7 +65,7 @@ class MitmForwarder:
                 pass
             else:  # packets is from target host
                 self.filter_packets(str(packet), packet[IP].dst)
-            print("[+ " + protocol + " ] " + get_full_src_addr(packet) + " >>> " + get_full_dst_addr(packet) + " [" + str(len(packet)) + "]")
+            print("[+ " + protocol + " ] " + print_ip_addr(packet) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
             send(packet)
 
     # ==================== PACKET FILTERING ==================== #
