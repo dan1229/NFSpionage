@@ -31,9 +31,9 @@ def print_ip_addr(packet, protocol='TCP', src=0):
     if protocol_scapy in packet:
         print("\t" + protocol + " is in " + str(packet))
         if src == 1:  # src
-            res += ":" + packet[protocol_scapy].sport
+            res += ":" + str(packet[protocol_scapy].sport)
         else:  # dst
-            res += ":" + packet[protocol_scapy].dport
+            res += ":" + str(packet[protocol_scapy].dport)
     return res
 
 
@@ -54,7 +54,7 @@ class MitmForwarder:
             self.packet_listen(remote_ip, port, protocol="TCP")
         print("// ========================================")
 
-    # ==================== TCP FORWARDING ==================== #
+    # ==================== PACKET FORWARDING ==================== #
 
     # create tcp servers to listen for and forward connections to target
     def packet_listen(self, target_host, target_port, protocol="TCP"):
@@ -66,8 +66,9 @@ class MitmForwarder:
             print("PACKET: " + str(packet))
             if packet[IP].src != target_host:  # packet is NOT from target host, change src IP
                 # TODO change src ip
+                # packet[IP].src = client_address  # how to get client address?
                 pass
-            else:  # packets is from target host
+            else:  # packets is from target host, filter for possible information
                 self.filter_packets(str(packet), packet[IP].dst)
             print("[+ " + protocol + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
             send(packet)
