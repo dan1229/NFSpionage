@@ -18,17 +18,17 @@ def get_protocol(protocol):
 # @PARAM
 # packet        scapy       packet object
 # protocol      string      TCP, UDP
-# dir           int         1 - src
-#                           2 - dst
-def print_ip_addr(packet, protocol='TCP', dir=1):
+# dir           int         0 - no, get dst
+#                           1 - yes, get src
+def print_ip_addr(packet, protocol='TCP', src=0):
     protocol_scapy = get_protocol(protocol)
-    if dir == 1:  # src
+    if src == 1:  # src
         res = packet[IP].src
     else:  # dst
         res = packet[IP].dst
 
     if protocol_scapy in packet:
-        if dir == 1:  # src
+        if src == 1:  # src
             res += ":" + packet[protocol_scapy].src
         else:  # dst
             res += ":" + packet[protocol_scapy].dst
@@ -65,7 +65,7 @@ class MitmForwarder:
                 pass
             else:  # packets is from target host
                 self.filter_packets(str(packet), packet[IP].dst)
-            print("[+ " + protocol + " ] " + print_ip_addr(packet) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
+            print("[+ " + protocol + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
             send(packet)
 
     # ==================== PACKET FILTERING ==================== #
