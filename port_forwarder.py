@@ -31,9 +31,9 @@ def print_ip_addr(packet, protocol='TCP', src=0):
     if protocol_scapy in packet:
         print("\t" + protocol + " is in " + str(packet))
         if src == 1:  # src
-            res += ":" + packet[protocol_scapy].src
+            res += ":" + packet[protocol_scapy].sport
         else:  # dst
-            res += ":" + packet[protocol_scapy].dst
+            res += ":" + packet[protocol_scapy].dport
     return res
 
 
