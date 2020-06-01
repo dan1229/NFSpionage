@@ -100,6 +100,7 @@ class MitmForwarder:
                 # self.filter_packets(str(packet), packet[IP].dst)
                 packet[IP].src = "172.16.119.143"
                 packet[IP].dst = self.client_address
+            del packet.chksum
             print_packet_transfer(protocol, packet)  # print outgoing packet
             send(packet)
 
