@@ -90,6 +90,7 @@ class MitmForwarder:
             print("client; " + self.client_address)
             if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
                 print("PACKET NOT FROM SERVER")
+                packet[IP].src = "172.16.119.143"
                 packet[IP].dst = self.server_address
                 # TODO change src ip
                 # packet[IP].src = client_address
@@ -97,6 +98,7 @@ class MitmForwarder:
             else:  # packets is from server -> forward to client
                 print("PACKET FROM SERVER")
                 # self.filter_packets(str(packet), packet[IP].dst)
+                packet[IP].src = "172.16.119.143"
                 packet[IP].dst = self.client_address
             print_packet_transfer(protocol, packet)  # print outgoing packet
             send(packet)
