@@ -60,7 +60,7 @@ class MitmForwarder:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server_socket.bind(('', target_port))
 
-        packet_filter = str(protocol).lower() + " and port " + str(target_port)
+        packet_filter = str(protocol.name).lower() + " and port " + str(target_port)
         # server_socket.listen(10)
         while True:
             print("=========================================")
