@@ -69,7 +69,7 @@ class MitmForwarder:
         server_socket.bind(('', target_port))
 
         packet_filter = protocol_str(protocol) + " and port " + str(target_port)
-        # server_socket.listen(10)
+        server_socket.listen(10)
         while True:
             print("=========================================")
             packets = sniff(count=1, filter=packet_filter)
