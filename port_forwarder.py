@@ -82,17 +82,21 @@ class MitmForwarder:
             server_socket.listen(1)
         while True:
             packets = sniff(count=1, filter=packet_filter)
+            print("=================================================")
             packet = packets.res[0]
             self.update_client_address(packet)
             print_packet_transfer(protocol, packet)
-
-            if packet[IP].src != self.server_address:  # packet is NOT from target host -> forward to target
+            print("server; " + self.server_address)
+            print("client; " + self.client_address)
+            if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+                print("PACKET NOT FROM SERVER")
                 packet[IP].dst = self.server_address
                 # TODO change src ip
                 # packet[IP].src = client_address
                 # packet[protocol].sport = client_sport
-            else:  # packets is from target host -> forward
-                self.filter_packets(str(packet), packet[IP].dst)
+            else:  # packets is from server -> forward to client
+                print("PACKET FROM SERVER")
+                # self.filter_packets(str(packet), packet[IP].dst)
                 packet[IP].dst = self.client_address
             print_packet_transfer(protocol, packet)  # print outgoing packet
             send(packet)
