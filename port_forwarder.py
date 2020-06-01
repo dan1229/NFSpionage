@@ -28,6 +28,13 @@ def print_ip_addr(packet, protocol=TCP, src=0):
     return res
 
 
+def protocol_str(protocol):
+    if protocol == TCP:
+        return "tcp"
+    else:
+        return "udp"
+
+
 def print_packet_transfer(protocol, packet):
     print("[+ " + str(protocol) + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
 
@@ -60,7 +67,7 @@ class MitmForwarder:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server_socket.bind(('', target_port))
 
-        packet_filter = str(protocol.name).lower() + " and port " + str(target_port)
+        packet_filter = protocol_str(protocol) + " and port " + str(target_port)
         # server_socket.listen(10)
         while True:
             print("=========================================")
