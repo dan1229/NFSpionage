@@ -36,7 +36,7 @@ def protocol_str(protocol):
 
 
 def print_packet_transfer(protocol, packet):
-    print("[+ " + str(protocol) + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
+    print("[+ " + protocol_str(protocol) + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
 
 
 class MitmForwarder:
@@ -65,6 +65,7 @@ class MitmForwarder:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(target_port))
         server_socket.bind(('', target_port))
 
         packet_filter = protocol_str(protocol) + " and port " + str(target_port)
