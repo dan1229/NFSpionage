@@ -36,53 +36,65 @@ def protocol_str(protocol):
 
 
 def print_packet_transfer(protocol, packet):
-    print("[+ " + protocol_str(protocol) + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
+    print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
 
 
 class MitmForwarder:
+    server_address = None
+    target_port = None
+
+    client_address = None
     mount_ports = []
-    spoof_address = None
 
     def __init__(self, remote_ip, port, udp=False):
+        self.server_address = remote_ip
+        self.target_port = port
         print("// ========================================")
         print("// Starting MitmForwarder...")
         print("// [*] LOC Addr:\t127.0.0.1:" + str(port))
         print("// [*] REM Addr:\t" + remote_ip + ":" + str(port))
         if udp:
             print("// [*] PROT:\t\tUDP")
-            self.packet_listen(remote_ip, port, protocol=UDP)
+            self.packet_listen(UDP)
         else:
             print("// [*] PROT:\t\tTCP")
-            self.packet_listen(remote_ip, port, protocol=TCP)
+            self.packet_listen(TCP)
         print("// ========================================")
+
+    def update_client_address(self, packet):
+        if packet[IP].src is not self.server_address:
+            self.client_address = packet[IP].src
 
     # ==================== PACKET FORWARDING ==================== #
 
     # create tcp servers to listen for and forward connections to target
-    def packet_listen(self, target_host, target_port, protocol=TCP):
+    def packet_listen(self, protocol):
         # socket to actually accept connections on localhost:target_port
         if protocol == TCP:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(target_port))
-        server_socket.bind(('', target_port))
+        print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
+        server_socket.bind(('', self.target_port))
 
-        packet_filter = protocol_str(protocol) + " and port " + str(target_port)
+        packet_filter = protocol_str(protocol) + " and port " + str(self.target_port)
         if protocol == TCP:
-            server_socket.listen(10)
+            server_socket.listen(1)
         while True:
-            print("=========================================")
             packets = sniff(count=1, filter=packet_filter)
             packet = packets.res[0]
-            if packet[IP].src != target_host:  # packet is NOT from target host, change src IP
-                # TODO change src ip - how to get addr
+            self.update_client_address(packet)
+            print_packet_transfer(protocol, packet)
+
+            if packet[IP].src != self.server_address:  # packet is NOT from target host -> forward to target
+                packet[IP].dst = self.server_address
+                # TODO change src ip
                 # packet[IP].src = client_address
                 # packet[protocol].sport = client_sport
-                pass
-            else:  # packets is from target host, filter for possible information
+            else:  # packets is from target host -> forward
                 self.filter_packets(str(packet), packet[IP].dst)
-            print_packet_transfer(protocol, packet)
+                packet[IP].dst = self.client_address
+            print_packet_transfer(protocol, packet)  # print outgoing packet
             send(packet)
 
     # ==================== PACKET FILTERING ==================== #
