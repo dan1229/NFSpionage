@@ -33,7 +33,7 @@ At that point, you can use most any NFS client to interact through NFSpionage. T
 `python text_client.py -s NFS_SERVER_IP -m MOUNT_PATH`
 
 #### MITM Tool
-NFSpionage **should** work with virtual any external MITM tool or software _i.e.,_ <a href="https://www.bettercap.org/">Bettercap</a>.
+NFSpionage should work with virtual any external MITM tool or software _i.e.,_ <a href="https://www.bettercap.org/">Bettercap</a>.
 <br>
 <br>
 
