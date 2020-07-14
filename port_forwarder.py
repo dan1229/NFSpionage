@@ -80,7 +80,8 @@ class MitmForwarder:
         packet_filter = protocol_str(protocol) + " and port " + str(self.target_port)
         if protocol == TCP:
             server_socket.listen(1)
-        while True:
+
+        while True:  # each iteration will receive a packet and forward it appropriately
             packets = sniff(count=1, filter=packet_filter)
             print("=================================================")
             packet = packets.res[0]
@@ -100,7 +101,6 @@ class MitmForwarder:
                 # self.filter_packets(str(packet), packet[IP].dst)
                 packet[IP].src = "172.16.119.143"
                 packet[IP].dst = self.client_address
-            del packet[IP].chksum
             print_packet_transfer(protocol, packet)  # print outgoing packet
             send(packet)
 
