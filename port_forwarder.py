@@ -39,6 +39,13 @@ def print_packet_transfer(protocol, packet):
     print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
 
 
+'''
+# ==============================================================================
+# MITM FORWARDER ===============================================================
+# ==============================================================================
+'''
+
+
 class MitmForwarder:
     server_address = None
     target_port = None
@@ -88,7 +95,7 @@ class MitmForwarder:
             self.update_client_address(packet)
             print_packet_transfer(protocol, packet)
             print("server; " + self.server_address)
-            print("client; " + self.client_address)
+            print("client: " + self.client_address)
             datagram = packet[IP]
             if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
                 print("PACKET NOT FROM SERVER")
@@ -102,8 +109,8 @@ class MitmForwarder:
                 # self.filter_packets(str(packet), packet[IP].dst)
                 # packet[IP].dst = self.client_address
                 datagram.dst = self.client_address
-            print_packet_transfer(protocol, packet)  # print outgoing packet
-            send(packet)
+            print_packet_transfer(protocol, datagram)  # print outgoing packet
+            send(datagram)
 
     # ==================== PACKET FILTERING ==================== #
 
