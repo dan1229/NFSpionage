@@ -1,6 +1,6 @@
 import _thread
+import ipaddress
 import socket
-import struct
 
 from kamene.sendrecv import sendp
 
@@ -107,15 +107,13 @@ class MitmForwarder:
         # print("\t - forwarding to " + str(self.client_address))
         # sendp(datagram)
 
-    def ip2int(self, addr):
-        return struct.unpack("!I", socket.inet_aton(addr))[0]
 
     def _handle(self, pkt):
         pkt[Ether].dst = None  # ask scapy to regenerate it
 
         print_packet_transfer(TCP, pkt)
         if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-            pkt.dst = self.ip2int(self.server_address)
+            pkt.dst = int(ipaddress.IPv4Address(self.server_address))
             print("\t - forwarding to " + str(self.server_address))
         #     print("\t - forwarding to " + str(self.server_address))
         #     # packet[IP].dst = self.server_address
@@ -123,7 +121,7 @@ class MitmForwarder:
         #     # packet[IP].src = client_address
         #     # packet[protocol].sport = client_sport
         else:  # packets is from server -> forward to client
-            pkt.dst = self.ip2int(self.client_address)
+            pkt.dst = int(ipaddress.IPv4Address(self.client_address))
             #     # self.filter_packets(str(packet), packet[IP].dst)
             #     # packet[IP].dst = self.client_address
             print("\t - forwarding to " + str(self.client_address))
