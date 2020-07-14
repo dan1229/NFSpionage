@@ -1,12 +1,14 @@
 import _thread
 import socket
 
+from kamene.sendrecv import sendp
+
 from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
-from scapy.sendrecv import sniff, send
+from scapy.sendrecv import sniff
 
 
 # @PARAM
@@ -96,7 +98,7 @@ class MitmForwarder:
             datagram = packet[IP]
             if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
                 datagram.dst = self.server_address
-                print("\t\t - forwarding to " + str(self.server_address))
+                print("\t - forwarding to " + str(self.server_address))
                 # packet[IP].dst = self.server_address
                 # TODO change src ip
                 # packet[IP].src = client_address
@@ -105,8 +107,8 @@ class MitmForwarder:
                 # self.filter_packets(str(packet), packet[IP].dst)
                 # packet[IP].dst = self.client_address
                 datagram.dst = self.client_address
-                print("\t\t - forwarding to " + str(self.client_address))
-            send(datagram)
+                print("\t - forwarding to " + str(self.client_address))
+            sendp(datagram)
 
     # ==================== PACKET FILTERING ==================== #
 
