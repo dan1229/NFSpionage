@@ -8,26 +8,19 @@ from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
+from scapy.layers.l2 import Ether
 from scapy.sendrecv import sniff
 
 
 # @PARAM
 # packet        scapy       packet object
 # protocol      string      TCP, UDP
-# dir           int         0 - no, get dst
-#                           1 - yes, get src
-def print_ip_addr(packet, protocol=TCP, src=0):
-    if src == 1:  # src
-        res = packet[IP].src
-    else:  # dst
-        res = packet[IP].dst
-
-    if protocol in packet:
-        if src == 1:  # src
-            res += ":" + str(packet[protocol].sport)
-        else:  # dst
-            res += ":" + str(packet[protocol].dport)
-    return res
+# dir           bool
+def print_ip_addr(packet, protocol=TCP, src=False):
+    if src:
+        return packet[IP].src + ":" + str(packet[protocol].sport)
+    else:
+        return packet[IP].dst + ":" + str(packet[protocol].dport)
 
 
 def protocol_str(protocol):
@@ -38,7 +31,7 @@ def protocol_str(protocol):
 
 
 def print_packet_transfer(protocol, packet):
-    print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=1) + " >>> " + print_ip_addr(packet) + " [" + str(len(packet)) + "]")
+    print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=True) + " >>> " + print_ip_addr(packet, src=False) + " [" + str(len(packet)) + "]")
 
 
 '''
@@ -96,18 +89,20 @@ class MitmForwarder:
             self.update_client_address(packet)
             print_packet_transfer(protocol, packet)
             datagram = packet[IP]
+            datagram[Ether].dst = None  # scapy should recalculate this
             if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
                 datagram.dst = self.server_address
-                print("\t - forwarding to " + str(self.server_address))
-                # packet[IP].dst = self.server_address
-                # TODO change src ip
-                # packet[IP].src = client_address
-                # packet[protocol].sport = client_sport
+            #     print("\t - forwarding to " + str(self.server_address))
+            #     # packet[IP].dst = self.server_address
+            #     # TODO change src ip
+            #     # packet[IP].src = client_address
+            #     # packet[protocol].sport = client_sport
             else:  # packets is from server -> forward to client
-                # self.filter_packets(str(packet), packet[IP].dst)
-                # packet[IP].dst = self.client_address
                 datagram.dst = self.client_address
-                print("\t - forwarding to " + str(self.client_address))
+            #     # self.filter_packets(str(packet), packet[IP].dst)
+            #     # packet[IP].dst = self.client_address
+            datagram.dst = self.server_address
+            print("\t - forwarding to " + str(self.client_address))
             sendp(datagram)
 
     # ==================== PACKET FILTERING ==================== #
