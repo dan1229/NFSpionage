@@ -79,31 +79,51 @@ class MitmForwarder:
         print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
         server_socket.bind(('', self.target_port))
 
-        packet_filter = protocol_str(protocol) + " and port " + str(self.target_port)
+        packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
         if protocol == TCP:
             server_socket.listen(1)
 
-        while True:  # each iteration will receive a packet and forward it appropriately
-            packets = sniff(count=1, filter=packet_filter)
-            packet = packets.res[0]
-            self.update_client_address(packet)
-            print_packet_transfer(protocol, packet)
-            datagram = packet[IP]
-            datagram[Ether].dst = None  # scapy should recalculate this
-            if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-                datagram.dst = self.server_address
-            #     print("\t - forwarding to " + str(self.server_address))
-            #     # packet[IP].dst = self.server_address
-            #     # TODO change src ip
-            #     # packet[IP].src = client_address
-            #     # packet[protocol].sport = client_sport
-            else:  # packets is from server -> forward to client
-                datagram.dst = self.client_address
+        sniff(count=1, filter=packet_filter_str, prn=self._handle)
+
+        # while True:  # each iteration will receive a packet and forward it appropriately
+        # packets = sniff(count=1, filter=packet_filter_str, prn=self._handle)
+        # packet = packets.res[0]
+        # self.update_client_address(packet)
+        # print_packet_transfer(protocol, packet)
+        # datagram = packet[IP]
+        # if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+        #     datagram.dst = self.server_address
+        # #     print("\t - forwarding to " + str(self.server_address))
+        # #     # packet[IP].dst = self.server_address
+        # #     # TODO change src ip
+        # #     # packet[IP].src = client_address
+        # #     # packet[protocol].sport = client_sport
+        # else:  # packets is from server -> forward to client
+        #     datagram.dst = self.client_address
+        # #     # self.filter_packets(str(packet), packet[IP].dst)
+        # #     # packet[IP].dst = self.client_address
+        # datagram.dst = self.server_address
+        # print("\t - forwarding to " + str(self.client_address))
+        # sendp(datagram)
+
+    def _handle(self, pkt):
+        pkt[Ether].dst = None  # ask scapy to regenerate it
+
+        print_packet_transfer(TCP, pkt)
+        if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+            pkt.dst = self.server_address
+            print("\t - forwarding to " + str(self.server_address))
+        #     print("\t - forwarding to " + str(self.server_address))
+        #     # packet[IP].dst = self.server_address
+        #     # TODO change src ip
+        #     # packet[IP].src = client_address
+        #     # packet[protocol].sport = client_sport
+        else:  # packets is from server -> forward to client
+            pkt.dst = self.client_address
             #     # self.filter_packets(str(packet), packet[IP].dst)
             #     # packet[IP].dst = self.client_address
-            datagram.dst = self.server_address
             print("\t - forwarding to " + str(self.client_address))
-            sendp(datagram)
+        sendp(pkt)
 
     # ==================== PACKET FILTERING ==================== #
 
