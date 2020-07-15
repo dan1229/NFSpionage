@@ -82,7 +82,8 @@ class MitmForwarder:
         if protocol == TCP:
             server_socket.listen()
 
-        sniff(count=1, filter=packet_filter_str, prn=self._handle)
+        while True:
+            sniff(count=1, filter=packet_filter_str, prn=self._handle)
 
         # while True:  # each iteration will receive a packet and forward it appropriately
         # packets = sniff(count=1, filter=packet_filter_str, prn=self._handle)
