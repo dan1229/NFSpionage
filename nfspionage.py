@@ -40,8 +40,8 @@ def run(ip_nfs_server):
 	# start forwarders for NFS and RPC (Remote Procedure Call) for TCP and UDP
 	_thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_NFS, False))
 	_thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_NFS, True))
-	# _thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_RPC, False))
-	# _thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_RPC, True))
+	_thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_RPC, False))
+	_thread.start_new_thread(MitmForwarder, (ip_nfs_server, PORT_RPC, True))
 
 	lock = _thread.allocate_lock()
 	lock.acquire()
