@@ -1,6 +1,5 @@
 import _thread
 import ipaddress
-import socket
 
 from nfspionage_api import NfspionageApi
 from scapy.compat import raw
@@ -71,17 +70,17 @@ class MitmForwarder:
     # create tcp servers to listen for and forward connections to target
     def packet_listen(self, protocol):
         # socket to actually accept connections on localhost:target_port
-        if protocol == TCP:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        else:
-            server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
-        server_socket.bind(('', self.target_port))
+        # if protocol == TCP:
+        #     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # else:
+        #     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
+        # server_socket.bind(('', self.target_port))
+        #
+        # if protocol == TCP:
+        #     server_socket.listen()
 
         packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
-        if protocol == TCP:
-            server_socket.listen()
-
         sniff(count=0, filter=packet_filter_str, prn=self._handle)
 
         # while True:  # each iteration will receive a packet and forward it appropriately
