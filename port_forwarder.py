@@ -1,5 +1,6 @@
 import _thread
 import ipaddress
+import socket
 
 from nfspionage_api import NfspionageApi
 from scapy.compat import raw
@@ -7,7 +8,7 @@ from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import Ether
-from scapy.sendrecv import sniff, send
+from scapy.sendrecv import send
 
 
 # @PARAM
@@ -70,18 +71,18 @@ class MitmForwarder:
     # create tcp servers to listen for and forward connections to target
     def packet_listen(self, protocol):
         # socket to actually accept connections on localhost:target_port
-        # if protocol == TCP:
-        #     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # else:
-        #     server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
-        # server_socket.bind(('', self.target_port))
-        #
-        # if protocol == TCP:
-        #     server_socket.listen()
+        if protocol == TCP:
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        else:
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
+        server_socket.bind(('', self.target_port))
 
-        packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
-        sniff(count=0, filter=packet_filter_str, prn=self._handle)
+        if protocol == TCP:
+            server_socket.listen()
+
+        # packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
+        # sniff(count=0, filter=packet_filter_str, prn=self._handle)
 
         # while True:  # each iteration will receive a packet and forward it appropriately
         # packets = sniff(count=1, filter=packet_filter_str, prn=self._handle)
@@ -108,7 +109,7 @@ class MitmForwarder:
     def _handle(self, pkt):
         pkt[Ether].checksum = None  # ask scapy to regenerate it
         pkt[IP].checksum = None  # ask scapy to regenerate it
-
+        print("===========================================")
         print_packet_transfer(TCP, pkt)
         self.update_client_address(pkt)
         if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
@@ -118,6 +119,7 @@ class MitmForwarder:
             pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
             print("\t - forwarding to " + str(self.client_address))
         send(pkt)
+        print("===========================================")
 
     # ==================== PACKET FILTERING ==================== #
 
