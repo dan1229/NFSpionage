@@ -7,7 +7,6 @@ from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
-from scapy.layers.l2 import Ether
 from scapy.sendrecv import sniff, send
 
 
@@ -107,7 +106,7 @@ class MitmForwarder:
 
 
     def _handle(self, pkt):
-        pkt[Ether].dst = None  # ask scapy to regenerate it
+        pkt[IP].checksum = None  # ask scapy to regenerate it
 
         print_packet_transfer(TCP, pkt)
         if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
