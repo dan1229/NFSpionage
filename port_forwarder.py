@@ -80,7 +80,7 @@ class MitmForwarder:
 
         packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
         if protocol == TCP:
-            server_socket.listen(1)
+            server_socket.listen()
 
         sniff(count=1, filter=packet_filter_str, prn=self._handle)
 
