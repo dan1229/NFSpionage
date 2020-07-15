@@ -110,6 +110,7 @@ class MitmForwarder:
         pkt[IP].checksum = None  # ask scapy to regenerate it
 
         print_packet_transfer(TCP, pkt)
+        self.update_client_address(pkt)
         if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
             pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
             print("\t - forwarding to " + str(self.server_address))
