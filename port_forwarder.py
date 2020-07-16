@@ -108,8 +108,14 @@ class MitmForwarder:
 
 
     def _handle(self, pkt):
-        pkt[Ether].checksum = None  # ask scapy to regenerate it
-        pkt[IP].checksum = None  # ask scapy to regenerate it
+        try:
+            pkt[Ether].checksum = None  # ask scapy to regenerate it
+        except:
+            pass
+        try:
+            pkt[IP].checksum = None  # ask scapy to regenerate it
+        except:
+            pass
         print("===========================================")
         print_packet_transfer(TCP, pkt)
         self.update_client_address(pkt)
