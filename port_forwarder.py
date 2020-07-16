@@ -8,13 +8,14 @@ from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import Ether
-from scapy.sendrecv import send, sniff
-
-
+from scapy.sendrecv import send
 # @PARAM
 # packet        scapy       packet object
 # protocol      string      TCP, UDP
 # dir           bool
+from scapy.supersocket import StreamSocket
+
+
 def print_ip_addr(packet, protocol=TCP, src=False):
     if src:
         return packet[IP].src + ":" + str(packet[protocol].sport)
@@ -77,13 +78,12 @@ class MitmForwarder:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
         server_socket.bind(('', self.target_port))
-
-        if protocol == TCP:
-            server_socket.listen()
-            server_socket.accept()
-
+        stream_socket = StreamSocket(server_socket)
+        # if protocol == TCP:
+        #     server_socket.listen()
+        #     server_socket.accept()
         packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
-        sniff(count=0, filter=packet_filter_str, prn=self._handle)
+        stream_socket.sniff(count=0, filter=packet_filter_str, prn=self._handle)
 
         # while True:  # each iteration will receive a packet and forward it appropriately
         # packets = sniff(count=1, filter=packet_filter_str, prn=self._handle)
