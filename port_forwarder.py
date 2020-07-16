@@ -108,11 +108,12 @@ class MitmForwarder:
 	# sendp(datagram)
 
 	def _handle(self, pkt):
+		print("===========================================")
+		print("packet: " + pkt.show())
 		if IP in pkt:  # only process packets with IP layer
 			pkt[IP].checksum = None  # ask scapy to regenerate it
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
-			print("===========================================")
 			print_packet_transfer(TCP, pkt)
 			self.update_client_address(pkt)
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
@@ -122,7 +123,7 @@ class MitmForwarder:
 				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
 				print("\t - forwarding to " + str(self.client_address))
 			send(pkt)
-			print("===========================================")
+		print("===========================================")
 
 	# ==================== PACKET FILTERING ==================== #
 
