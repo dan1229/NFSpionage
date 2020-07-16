@@ -78,7 +78,6 @@ class MitmForwarder:
 			server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
 		server_socket.bind(('', self.target_port))
-		server_socket.listen(10)
 		stream_socket = StreamSocket(server_socket)
 
 		while True:
