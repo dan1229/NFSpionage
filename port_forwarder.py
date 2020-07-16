@@ -8,7 +8,6 @@ from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP, UDP
 from scapy.layers.l2 import Ether
-from scapy.sendrecv import send
 # @PARAM
 # packet        scapy       packet object
 # protocol      string      TCP, UDP
@@ -73,57 +72,33 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def packet_listen(self, protocol):
 		# socket to actually accept connections on localhost:target_port
-		# if protocol == TCP:
-		# 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		# else:
-		server_socket = socket.socket()
+		if protocol == TCP:
+			server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		else:
+			server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
 		server_socket.bind(('', self.target_port))
 		stream_socket = StreamSocket(server_socket)
-		# if protocol == TCP:
-		#     server_socket.listen()
-		#     server_socket.accept()
-		packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
-		stream_socket.sniff(count=0, filter=packet_filter_str, prn=self._handle)
 
-	# while True:  # each iteration will receive a packet and forward it appropriately
-	# packets = sniff(count=1, filter=packet_filter_str, prn=self._handle)
-	# packet = packets.res[0]
-	# self.update_client_address(packet)
-	# print_packet_transfer(protocol, packet)
-	# datagram = packet[IP]
-	# if packet[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-	#     datagram.dst = self.server_address
-	# #     print("\t - forwarding to " + str(self.server_address))
-	# #     # packet[IP].dst = self.server_address
-	# #     # TODO change src ip
-	# #     # packet[IP].src = client_address
-	# #     # packet[protocol].sport = client_sport
-	# else:  # packets is from server -> forward to client
-	#     datagram.dst = self.client_address
-	# #     # self.filter_packets(str(packet), packet[IP].dst)
-	# #     # packet[IP].dst = self.client_address
-	# datagram.dst = self.server_address
-	# print("\t - forwarding to " + str(self.client_address))
-	# sendp(datagram)
+		while True:
+			print("===========================================")
+			pkt = stream_socket.recv()
+			print("pkt: " + str(pkt))
 
-	def _handle(self, pkt):
-		print("===========================================")
-		print("packet: " + str(pkt.summary()))
-		if IP in pkt:  # only process packets with IP layer
-			pkt[IP].checksum = None  # ask scapy to regenerate it
-			if Ether in pkt:
-				pkt[Ether].checksum = None  # ask scapy to regenerate it
-			print_packet_transfer(TCP, pkt)
-			self.update_client_address(pkt)
-			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
-				print("\t - forwarding to " + str(self.server_address))
-			else:  # packets is from server -> forward to client
-				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
-				print("\t - forwarding to " + str(self.client_address))
-			send(pkt)
-		print("===========================================")
+			if IP in pkt:  # only process packets with IP layer
+				pkt[IP].checksum = None  # ask scapy to regenerate it
+				if Ether in pkt:
+					pkt[Ether].checksum = None  # ask scapy to regenerate it
+				print_packet_transfer(TCP, pkt)
+				self.update_client_address(pkt)
+				if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+					pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
+					print("\t - forwarding to " + str(self.server_address))
+				else:  # packets is from server -> forward to client
+					pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
+					print("\t - forwarding to " + str(self.client_address))
+				stream_socket.send(pkt)
+			print("===========================================")
 
 	# ==================== PACKET FILTERING ==================== #
 
