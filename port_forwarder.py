@@ -17,10 +17,11 @@ from scapy.supersocket import StreamSocket
 
 
 def print_ip_addr(packet, protocol=TCP, src=False):
-	if src:
-		return packet[IP].src + ":" + str(packet[protocol].sport)
-	else:
-		return packet[IP].dst + ":" + str(packet[protocol].dport)
+	if IP in packet:
+		if src:
+			return packet[IP].src + ":" + str(packet[protocol].sport)
+		else:
+			return packet[IP].dst + ":" + str(packet[protocol].dport)
 
 
 def protocol_str(protocol):
@@ -31,10 +32,7 @@ def protocol_str(protocol):
 
 
 def print_packet_transfer(protocol, packet):
-	try:
-		print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=True) + " >>> " + print_ip_addr(packet, src=False) + " [" + str(len(packet)) + "]")
-	except Exception as e:
-		pass
+	print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=True) + " >>> " + print_ip_addr(packet, src=False) + " [" + str(len(packet)) + "]")
 
 
 '''
@@ -67,11 +65,8 @@ class MitmForwarder:
 		print("// ========================================")
 
 	def update_client_address(self, packet):
-		try:
-			if packet[IP].src is not self.server_address:
-				self.client_address = packet[IP].src
-		except Exception as e:
-			pass
+		if IP in packet and packet[IP].src is not self.server_address:
+			self.client_address = packet[IP].src
 
 	# ==================== PACKET FORWARDING ==================== #
 
@@ -113,25 +108,21 @@ class MitmForwarder:
 	# sendp(datagram)
 
 	def _handle(self, pkt):
-		try:
-			pkt[Ether].checksum = None  # ask scapy to regenerate it
-		except:
-			pass
-		try:
+		if IP in pkt:  # only process packets with IP layer
 			pkt[IP].checksum = None  # ask scapy to regenerate it
-		except:
-			pass
-		print("===========================================")
-		print_packet_transfer(TCP, pkt)
-		self.update_client_address(pkt)
-		if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-			pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
-			print("\t - forwarding to " + str(self.server_address))
-		else:  # packets is from server -> forward to client
-			pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
-			print("\t - forwarding to " + str(self.client_address))
-		send(pkt)
-		print("===========================================")
+			if Ether in pkt:
+				pkt[Ether].checksum = None  # ask scapy to regenerate it
+			print("===========================================")
+			print_packet_transfer(TCP, pkt)
+			self.update_client_address(pkt)
+			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
+				print("\t - forwarding to " + str(self.server_address))
+			else:  # packets is from server -> forward to client
+				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
+				print("\t - forwarding to " + str(self.client_address))
+			send(pkt)
+			print("===========================================")
 
 	# ==================== PACKET FILTERING ==================== #
 
