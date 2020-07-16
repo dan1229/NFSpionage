@@ -109,7 +109,7 @@ class MitmForwarder:
 
 	def _handle(self, pkt):
 		print("===========================================")
-		print("packet: " + str(pkt.show()))
+		print("packet: " + str(pkt.summary()))
 		if IP in pkt:  # only process packets with IP layer
 			pkt[IP].checksum = None  # ask scapy to regenerate it
 			if Ether in pkt:
