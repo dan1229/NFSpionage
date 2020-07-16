@@ -73,10 +73,10 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def packet_listen(self, protocol):
 		# socket to actually accept connections on localhost:target_port
-		if protocol == TCP:
-			server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		else:
-			server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		# if protocol == TCP:
+		# 	server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		# else:
+		server_socket = socket.socket()
 		print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
 		server_socket.bind(('', self.target_port))
 		stream_socket = StreamSocket(server_socket)
