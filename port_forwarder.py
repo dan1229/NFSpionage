@@ -31,8 +31,10 @@ def protocol_str(protocol):
 
 
 def print_packet_transfer(protocol, packet):
-    print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=True) + " >>> " + print_ip_addr(packet, src=False) + " [" + str(len(packet)) + "]")
-
+    try:
+        print("[+ " + protocol_str(protocol).upper() + " ] " + print_ip_addr(packet, src=True) + " >>> " + print_ip_addr(packet, src=False) + " [" + str(len(packet)) + "]")
+    except Exception as e:
+        pass
 
 '''
 # ==============================================================================
