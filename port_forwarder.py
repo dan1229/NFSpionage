@@ -102,6 +102,10 @@ class MitmForwarder:
 		if Ether in pkt:
 			pkt[Ether].checksum = None  # ask scapy to regenerate
 		if IP in pkt:  # only process packets with IP layer
+			try:
+				self.filter_packets(pkt)
+			except Exception as e:
+				print("[EXP *] Filtering packet: " + str(e))
 			pkt[IP].checksum = None  # ask scapy to regenerate
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
@@ -170,7 +174,7 @@ class MitmForwarder:
 	# ==================== PACKET FILTERING ==================== #
 
 	# filter packets for data of interest - i.e., mount port and mount path
-	def filter_packets(self, pkt, remote_ip):
+	def filter_packets(self, pkt):
 		# port = self.filter_mount_port(pkt)
 		# if port != -1 and port not in self.mount_ports:
 		# 	print("[* INF ] starting forwarders on port " + str(port))
@@ -182,7 +186,7 @@ class MitmForwarder:
 		path = self.filter_mount_path(pkt)
 		if path != -1:  # if proper mount path, start API on path for clients
 			print("[* INF ] starting NFS MITM API on path \'" + path + "\'")
-			_thread.start_new_thread(NfspionageApi, (remote_ip, path))
+			_thread.start_new_thread(NfspionageApi, (self.server_address, path))
 
 	# @staticmethod
 	# def filter_mount_port(pkt):
