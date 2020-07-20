@@ -80,7 +80,7 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
 		# create thread for python socket to "accept" messages
-		threading.Thread(target=self.tcp_listen, args=('', self.target_port))
+		threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
 
 		# listen with scapy to actually forward and
 		str_filter = "tcp and port " + str(self.target_port)
