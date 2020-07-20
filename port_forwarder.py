@@ -1,12 +1,14 @@
 import _thread
+import ipaddress
 import socket
-import threading
 
 from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP
+from scapy.layers.l2 import Ether
+from scapy.sendrecv import sniff, sr1
 from scapy.supersocket import StreamSocket
 
 
@@ -68,43 +70,61 @@ class MitmForwarder:
 			self.tcp_proxy()
 		print("// ========================================")
 
-	def update_spoof_address(self, addr):
-		if self.spoof_address is None or self.spoof_address is '127.0.0.1' or self.spoof_address is '0.0.0.0' or self.spoof_address is '':
-			self.spoof_address = addr
+	def update_client_address(self, packet):
+		if packet[IP].src is not self.server_address:
+			self.client_address = packet[IP].src
 
 	# ==================== TCP FORWARDING ==================== #
 
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
-		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		server_socket.bind(('', self.target_port))
-		server_socket = StreamSocket(server_socket)
+		str_filter = "tcp and port " + str(self.target_port)
+		sniff(filter=str_filter, prn=self.transfer_tcp)
 
-		while True:
-			# accept connection from client
-			local_socket, local_address = server_socket.recv()
-			self.update_spoof_address(local_address[0])
+	# server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+	# server_socket.bind(('', self.target_port))
+	# server_socket = StreamSocket(server_socket)
+	#
+	# while True:
+	# 	# accept connection from client
+	# 	local_socket, local_address = server_socket.recv()
+	# 	self.update_spoof_address(local_address[0])
+	#
+	# 	# create remote socket to connect to server
+	# 	remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	# 	remote_socket.bind(('', local_address[1]))
+	# 	remote_socket.connect((self.server_address, self.target_port))
+	# 	remote_socket = StreamSocket(remote_socket)
+	#
+	# 	# create threads for each direction
+	# 	s = threading.Thread(target=self.transfer_tcp, args=(remote_socket, local_socket))
+	# 	r = threading.Thread(target=self.transfer_tcp, args=(local_socket, remote_socket))
+	# 	s.start()
+	# 	r.start()
 
-			# create remote socket to connect to server
-			remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-			remote_socket.bind(('', local_address[1]))
-			remote_socket.connect((self.server_address, self.target_port))
-			remote_socket = StreamSocket(remote_socket)
-
-			# create threads for each direction
-			s = threading.Thread(target=self.transfer_tcp, args=(remote_socket, local_socket))
-			r = threading.Thread(target=self.transfer_tcp, args=(local_socket, remote_socket))
-			s.start()
-			r.start()
+	def transfer_tcp(self, pkt):
+		if IP in pkt:  # only process packets with IP layer
+			pkt[IP].checksum = None  # ask scapy to regenerate it
+			if Ether in pkt:
+				pkt[Ether].checksum = None  # ask scapy to regenerate it
+			print_packet_transfer(TCP, pkt)
+			self.update_client_address(pkt)
+			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
+				print("\t - forwarding to " + str(self.server_address))
+			else:  # packets is from server -> forward to client
+				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
+				print("\t - forwarding to " + str(self.client_address))
+			sr1(pkt)
 
 	# listens for tcp connections and forwards data from src socket to dst socket
-	@staticmethod
-	def transfer_tcp(src, dst):
-		while True:
-			data = src.recv(64512)
-			print("[+ TCP ] " + tuple_to_addr(src.getpeername()) + " >>> " + tuple_to_addr(dst.getpeername()) + " [" + str(len(data)) + "]")
-			dst.send(data)
+	# @staticmethod
+	# def transfer_tcp(src, dst):
+	# 	while True:
+	# 		data = src.recv(64512)
+	# 		print("[+ TCP ] " + tuple_to_addr(src.getpeername()) + " >>> " + tuple_to_addr(dst.getpeername()) + " [" + str(len(data)) + "]")
+	# 		dst.send(data)
 
 	# ==================== UDP FORWARDING ==================== #
 
