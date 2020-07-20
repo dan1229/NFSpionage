@@ -80,15 +80,16 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
 		# create thread for python socket to "accept" messages
-		threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
+		threading.Thread(target=self.raw_tcp_listen,).start()
+		# threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
 		sniff(filter=str_filter, prn=self.transfer_tcp)
 
 	def tcp_listen(self, host, port):
-		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-		sock.bind(('ens33', port))
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind(('', port))
 		if host == '':  # server
 			sock.listen()
 			while True:
@@ -98,6 +99,18 @@ class MitmForwarder:
 			try:
 				sock.connect((host, port))
 				sock.recv(64512)
+			except:
+				pass
+
+	@staticmethod
+	def raw_tcp_listen():
+		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+		sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+		sock.bind(('ens33', 0))
+		while True:
+			try:  # accept packets
+				raw_buffer = sock.recvfrom(65565)[0]
+				ip_header = IP(raw_buffer[0:20])  # create ip header
 			except:
 				pass
 
