@@ -1,6 +1,7 @@
 import _thread
 import ipaddress
 import socket
+import threading
 
 from nfspionage_api import NfspionageApi
 from scapy.compat import raw
@@ -78,6 +79,10 @@ class MitmForwarder:
 
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
+		# create thread for python socket to "accept" messages
+		threading.Thread(target=self.tcp_listen, args=(self.target_port))
+
+		# listen with scapy to actually forward and
 		str_filter = "tcp and port " + str(self.target_port)
 		sniff(filter=str_filter, prn=self.transfer_tcp)
 
@@ -103,8 +108,16 @@ class MitmForwarder:
 	# 	s.start()
 	# 	r.start()
 
+	@staticmethod
+	def tcp_listen(port):
+		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		server_socket.bind(('', port))
+		while True:
+			server_socket.recv(65412)
+
 	def transfer_tcp(self, pkt):
 		if IP in pkt:  # only process packets with IP layer
+			self.tcp_listen(pkt[TCP].sport)
 			pkt[IP].checksum = None  # ask scapy to regenerate it
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
