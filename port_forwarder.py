@@ -111,7 +111,7 @@ class MitmForwarder:
 	@staticmethod
 	def tcp_listen(host, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.bind((host, port))
+		sock.bind(('', port))
 		if host == '':  # server
 			sock.listen(1)
 			while True:
