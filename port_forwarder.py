@@ -105,7 +105,6 @@ class MitmForwarder:
 	@staticmethod
 	def raw_tcp_listen():
 		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-		sock.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
 		sock.bind(('ens33', 0))
 		while True:
 			try:  # accept packets
