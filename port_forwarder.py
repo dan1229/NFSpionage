@@ -95,8 +95,11 @@ class MitmForwarder:
 				connection, client_address = sock.accept()
 				self.tcp_listen(self.server_address, client_address[1])  # when receiving message, try to create proxy socket on localhost
 		else:  # 'client'
-			sock.connect((host, port))
-			sock.recv(64512)
+			try:
+				sock.connect((host, port))
+				sock.recv(64512)
+			except:
+				pass
 
 	def transfer_tcp(self, pkt):
 		if Ether in pkt:
