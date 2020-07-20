@@ -114,7 +114,7 @@ class MitmForwarder:
 		print("PORT: " + str(port))
 		sock.bind(('', port))
 		if host == '':  # server
-			sock.listen(1)
+			sock.listen()
 			while True:
 				connection, client_address = sock.accept()
 				self.tcp_listen(self.server_address, client_address[1])  # when receiving message, try to create proxy socket on localhost
@@ -129,7 +129,7 @@ class MitmForwarder:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
 			print_packet_transfer(TCP, pkt)
 			self.update_client_address(pkt)
-			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
+			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to client
 				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
 				print("\t - forwarding to " + str(self.server_address))
 			else:  # packets is from server -> forward to client
