@@ -108,21 +108,22 @@ class MitmForwarder:
 	# 	s.start()
 	# 	r.start()
 
-	@staticmethod
-	def tcp_listen(host, port):
+	def tcp_listen(self, host, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		print("HOST: " + str(host))
+		print("PORT: " + str(port))
 		sock.bind(('', port))
 		if host == '':  # server
 			sock.listen(1)
 			while True:
 				connection, client_address = sock.accept()
+				self.tcp_listen(self.server_address, client_address[1])  # when receiving message, try to create proxy socket on localhost
 		else:  # 'client'
 			sock.connect((host, port))
 			sock.recv(64512)
 
 	def transfer_tcp(self, pkt):
 		if IP in pkt:  # only process packets with IP layer
-			self.tcp_listen(self.server_address, pkt[TCP].sport)
 			pkt[IP].checksum = None  # ask scapy to regenerate it
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
