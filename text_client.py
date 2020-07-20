@@ -122,7 +122,7 @@ def run(server_ip, mount_point):
     menu(nfs)
 
     while True:
-        print("Choose option")
+        print("===========================\nChoose option")
         choice = input(">> ")
         func = case_statement(choice)
         func(nfs)

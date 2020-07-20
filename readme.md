@@ -18,7 +18,7 @@ NFSpionage is a tool designed to work in tandem during a Man-In-The-Middle attac
 
 
 ## Requirements
-- Python >= 3.7
+- Python 3
 - Python packages: `pip install -r requirements.txt`
 - libdnet
 - tcpdump
