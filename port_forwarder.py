@@ -83,7 +83,7 @@ class MitmForwarder:
 		threading.Thread(target=self.tcp_listen, args=(self.target_port))
 
 		# listen with scapy to actually forward and
-		str_filter = "tcp and port " + str(self.target_port)
+		str_filter = "tcp and port " + str('', self.target_port)
 		sniff(filter=str_filter, prn=self.transfer_tcp)
 
 	# server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -109,16 +109,20 @@ class MitmForwarder:
 	# 	r.start()
 
 	@staticmethod
-	def tcp_listen(port):
+	def tcp_listen(host, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		sock.bind(('', port))
-		sock.listen(1)
-		while True:
-			connection, client_address = sock.accept()
+		sock.bind((host, port))
+		if host == '':  # server
+			sock.listen(1)
+			while True:
+				connection, client_address = sock.accept()
+		else:  # 'client'
+			sock.connect((host, port))
+			sock.recv(64512)
 
 	def transfer_tcp(self, pkt):
 		if IP in pkt:  # only process packets with IP layer
-			self.tcp_listen(pkt[TCP].sport)
+			self.tcp_listen(self.server_address, pkt[TCP].sport)
 			pkt[IP].checksum = None  # ask scapy to regenerate it
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
