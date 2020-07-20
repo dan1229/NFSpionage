@@ -110,10 +110,11 @@ class MitmForwarder:
 
 	@staticmethod
 	def tcp_listen(port):
-		server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		server_socket.bind(('', port))
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind(('', port))
+		sock.listen(1)
 		while True:
-			server_socket.recv(65412)
+			connection, client_address = sock.accept()
 
 	def transfer_tcp(self, pkt):
 		if IP in pkt:  # only process packets with IP layer
