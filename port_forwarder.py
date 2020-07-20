@@ -87,8 +87,8 @@ class MitmForwarder:
 		sniff(filter=str_filter, prn=self.transfer_tcp)
 
 	def tcp_listen(self, host, port):
-		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
-		sock.bind(('', port))
+		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+		sock.bind(('ens33', port))
 		if host == '':  # server
 			sock.listen()
 			while True:
