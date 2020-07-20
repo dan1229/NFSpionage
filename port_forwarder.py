@@ -83,7 +83,7 @@ class MitmForwarder:
 
 		while True:
 			# accept connection from client
-			local_socket, local_address = server_socket.accept()
+			local_socket, local_address = server_socket.recv()
 			self.update_spoof_address(local_address[0])
 
 			# create remote socket to connect to server
