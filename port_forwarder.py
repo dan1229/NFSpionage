@@ -83,7 +83,8 @@ class MitmForwarder:
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
-		sniff(filter=str_filter, prn=self.transfer_tcp)
+		while True:
+			sniff(count=1, filter=str_filter, prn=self.transfer_tcp)
 
 	def tcp_listen(self, host, port):
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
