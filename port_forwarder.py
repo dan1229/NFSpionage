@@ -122,6 +122,7 @@ class MitmForwarder:
 			else:  # packets is from server -> forward to client
 				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.client_address)))
 				print("\t - forwarding to " + str(self.client_address))
+			pkt.show()
 			sr1(pkt)
 
 	# ==================== PACKET FILTERING ==================== #
