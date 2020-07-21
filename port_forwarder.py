@@ -101,7 +101,7 @@ class MitmForwarder:
 				pass
 
 	def transfer_tcp(self, pkt):
-		pkt.summary()
+		pkt.show()
 		if Ether in pkt:
 			pkt[Ether].checksum = None  # ask scapy to regenerate
 		if IP in pkt:  # only process packets with IP layer
