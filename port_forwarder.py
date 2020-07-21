@@ -114,11 +114,11 @@ class MitmForwarder:
 			print_packet_transfer(TCP, pkt)
 			self.update_client_address(pkt)
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
-				pkt.dst = hex(int(ipaddress.IPv4Address(self.server_address)))
+				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.server_address)))
 				pkt[TCP].dport = self.target_port
 				print("\t - forwarding to " + str(self.server_address))
 			else:  # packets is from server -> forward to client
-				pkt.dst = hex(int(ipaddress.IPv4Address(self.client_address)))
+				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.client_address)))
 				print("\t - forwarding to " + str(self.client_address))
 			sr1(pkt)
 
