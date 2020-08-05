@@ -38,6 +38,6 @@ NFSpionage should work with virtual any external MITM tool or software _i.e.,_ <
 <br>
 
 ## Contact
-This project was created by Daniel Nazarian with the help of <a href="https://t.co/CRtZOgqCKn?amp=1>Dr. Joseph Wilson</a>
+This project was created by Daniel Nazarian with the help of <a href="https://t.co/CRtZOgqCKn?amp=1">Dr. Joseph Wilson</a>
 
 If you'd like to contribute or have any questions, feel free to reach out to me at <a href="mailto:danielnazarian@outlook.com">DanielNazarian@outlook.com</a> or visit <a href="https://DanielNazarian.com">DanielNazarian.com</a> for more about me and other projects I'm working on.
