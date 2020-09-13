@@ -109,7 +109,7 @@ class MitmForwarder:
 			try:
 				self.filter_packets(pkt)
 			except Exception as e:
-				print("[EXP *] Filtering packet: " + str(e))
+				print("[EXP *] Filtering paorwarcket: " + str(e))
 			pkt[IP].checksum = None  # ask scapy to regenerate
 			if Ether in pkt:
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
