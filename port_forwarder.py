@@ -87,11 +87,11 @@ class MitmForwarder:
 			self.update_client_address(pkt)
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
 				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.client_address)))
-				pkt[IP].dst = ipaddress.IPv4Address(self.server_address)
+				pkt[IP].dst = str(ipaddress.IPv4Address(self.server_address))
 				print("\t - forwarding to " + str(self.server_address))
 			else:  # packets is from server -> forward to client
 				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.server_address)))
-				pkt[IP].dst = ipaddress.IPv4Address(self.client_address)
+				pkt[IP].dst = str(ipaddress.IPv4Address(self.client_address))
 				print("\t - forwarding to " + str(self.client_address))
 
 			# send packet
@@ -101,26 +101,19 @@ class MitmForwarder:
 	# tcp_listen ============================================== #
 	# create tcp listener on passed host and port
 	# PARAM
-	# host (str)    - host to create socket on ('' for server/listener)
+	# host (str)    - host to create socket on
 	# port (int)    - port to create socket on
 	# RETURN
 	# void
 	def tcp_listen(self, host, port):
+		print("[* INF ] TCP LISTEN STARTING: " + host + ":" + str(port))
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', port))
-		if host == '':  # setup server to listen
-			sock.listen()
-			while True:  # listen forever
-				# msg rcvd -> call this func again to try to create "client" socket on that port
-				connection, client_address = sock.accept()
-				self.tcp_listen(self.server_address, client_address[1])
-		else:  # setup 'client' to listen on passed port
-			try:
-				while True:
-					sock.connect((host, port))
-					sock.recv(64512)
-			except Exception:
-				pass
+		sock.listen()
+		while True:  # listen forever
+			# msg rcvd -> call this func again to try to create "client" socket on that port
+			connection, client_address = sock.accept()
+			self.tcp_listen(self.server_address, client_address[1])
 
 	# ======================================================== #
 	# ==================== UDP FORWARDING ==================== #
