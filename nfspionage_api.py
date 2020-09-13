@@ -26,7 +26,7 @@ class NfspionageApi:
         self.mount_url = 'nfs://' + nfs_server_ip + mount_path
 
         print_console("// ========================================")
-        print_console("// Starting NFS MITM API...")
+        print_console("// Starting NFS MITM API", trailing_dots=True)
         print_console("// [*] IP ADDR:\t\tlocalhost:" + str(self.port))
         print_console("// [*] MNT URL:\t\t" + self.mount_url)
         print_console("// ========================================")

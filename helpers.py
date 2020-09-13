@@ -21,12 +21,12 @@ def kill_process_on_port(port):
 			for conns in proc.connections(kind='inet'):
 				if conns.laddr.port == port:
 					found = True
-					print("[* INF ] killing process on port " + str(port))
+					print_console("killing process on port " + str(port), trailing_dots=True)
 					proc.send_signal(SIGTERM)
 		if not found:
-			print("[* INF ] no process found to kill on port " + str(port))
+			print_console("no process found to kill on port " + str(port))
 	except Exception as e:
-		print("[* EXP ] exception while trying to kill process on port " + str(port) + "\n" + str(e))
+		print_exception("KILLING process on port " + str(port) + "\n" + str(e))
 
 
 # print_exception ====================================== #
@@ -37,5 +37,8 @@ def print_exception(s, tag="EXP", sym="-"):
 
 # print_console ========================================= #
 # default console printing
-def print_console(s, tag="INF", sym="*"):
-	print("[" + str(sym) + " " + str(tag) + "] " + str(s))
+def print_console(s, tag="INF", sym="*", trailing_dots=False):
+	s = "[" + str(sym) + " " + str(tag) + "] " + str(s)
+	if trailing_dots:
+		s += "..."
+	print(s)

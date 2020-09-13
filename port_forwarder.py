@@ -32,7 +32,7 @@ class MitmForwarder:
 		self.target_port = port
 		self.spoof_address = remote_ip
 		print_console("// ========================================")
-		print_console("// Starting MitmForwarder...")
+		print_console("// Starting MitmForwarder", trailing_dots=True)
 		print_console("// [*] LOC Addr:\t127.0.0.1:" + str(port))
 		print_console("// [*] REM Addr:\t" + remote_ip + ":" + str(port))
 		if udp:
@@ -60,8 +60,8 @@ class MitmForwarder:
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
-		print_console("STARTING scapy packet sniffing")
 		print_console("FILTER: " + str(str_filter))
+		print_console("STARTING scapy packet sniffing", trailing_dots=True)
 		sniff(count=0, filter=str_filter, prn=self.transfer_tcp)
 		print_console("STOPPING scapy packet sniffing")
 		print_console("// END tcp_proxy ====================================")
@@ -74,7 +74,7 @@ class MitmForwarder:
 	# void
 	def transfer_tcp(self, pkt):
 		if IP in pkt:  # only process packets with IP layer
-			pkt.show()
+			# pkt.show()
 
 			# try to filter
 			try:
@@ -85,7 +85,6 @@ class MitmForwarder:
 			# fix check sums
 			pkt[IP].checksum = None  # ask scapy to regenerate
 			src_ether = pkt[Ether].src
-			print_console("src_ether: " + str(src_ether))
 			if Ether in pkt:
 				pkt[Ether].src = None
 				pkt[Ether].dst = None
@@ -102,8 +101,8 @@ class MitmForwarder:
 				pkt[IP].dst = str(ipaddress.IPv4Address(self.client_address))
 
 			# send packet
-			pkt.show()
-			print_console("FORWARDING to " + str(pkt[IP].dst))
+			# pkt.show()
+			print_console("FORWARDING to " + str(pkt[IP].dst), trailing_dots=True)
 			sr1(pkt)
 
 	# tcp_listen ============================================== #
@@ -115,7 +114,7 @@ class MitmForwarder:
 	# RETURN
 	# void
 	def tcp_listen(self, port):
-		print_console("LISTEN STARTING: " + ":" + str(port), tag="TCP")
+		print_console("LISTEN STARTING: " + str(port), tag="TCP", trailing_dots=True)
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', port))
 		sock.listen()
@@ -148,7 +147,7 @@ class MitmForwarder:
 		# filter path, start mitm API
 		path = self.filter_mount_path(pkt)
 		if path != -1:  # if proper mount path, start API on path for clients
-			print_console("starting NFS MITM API on path \'" + path + "\'")
+			print_console("starting NFS MITM API on path \'" + path + "\'", trailing_dots=True)
 			_thread.start_new_thread(NfspionageApi, (self.server_address, path))
 
 	# filter_mount_path =========================================== #
