@@ -1,10 +1,17 @@
 import socket
 
+'''
+# ==============================================================================
+# NFSPIONAGE API ===============================================================
+# ==============================================================================
+'''
 
-# API to distribute connection credentials to clients
-# connect to localhost:2050
+
+# a simple TCP/Socket based API to distribute connection credentials to clients
+# simply connect to localhost:2050 while NFS connection is being mitm'ed to get
+# relevant mount info - namely the mount path
+#
 # see text_client.py for example on basic connection and usage
-
 
 class NfspionageApi:
     nfs_context = None
