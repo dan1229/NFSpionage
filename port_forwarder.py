@@ -53,7 +53,7 @@ class MitmForwarder:
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
 		# create thread for python socket to "accept" messages
-		threading.Thread(target=self.tcp_listen, args=('', self.target_port)).start()
+		threading.Thread(target=self.tcp_listen, args=self.target_port).start()
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
@@ -81,6 +81,8 @@ class MitmForwarder:
 			# fix check sums
 			pkt[IP].checksum = None  # ask scapy to regenerate
 			if Ether in pkt:
+				pkt[Ether].src = None
+				pkt[Ether].dst = None
 				pkt[Ether].checksum = None  # ask scapy to regenerate it
 
 			# change src and dst IP appropriately
@@ -99,21 +101,22 @@ class MitmForwarder:
 			sr1(pkt)
 
 	# tcp_listen ============================================== #
-	# create tcp listener on passed host and port
+	# create tcp listener on passed host and port, needed so that other hosts
+	# see a 'real program' running on this port
 	# PARAM
 	# host (str)    - host to create socket on
 	# port (int)    - port to create socket on
 	# RETURN
 	# void
-	def tcp_listen(self, host, port):
-		print("[* INF ] TCP LISTEN STARTING: " + host + ":" + str(port))
+	def tcp_listen(self, port):
+		print("[* INF ] TCP LISTEN STARTING: " + ":" + str(port))
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', port))
 		sock.listen()
 		while True:  # listen forever
-			# msg rcvd -> call this func again to try to create "client" socket on that port
+			# msg rcvd -> call this func again to try to create another "client" socket on that port
 			connection, client_address = sock.accept()
-			self.tcp_listen(self.server_address, client_address[1])
+			self.tcp_listen(client_address[1])
 
 	# ======================================================== #
 	# ==================== UDP FORWARDING ==================== #
