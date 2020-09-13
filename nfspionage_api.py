@@ -1,5 +1,7 @@
 import socket
 
+from helpers import print_console
+
 '''
 # ==============================================================================
 # NFSPIONAGE API ===============================================================
@@ -23,11 +25,11 @@ class NfspionageApi:
 
         self.mount_url = 'nfs://' + nfs_server_ip + mount_path
 
-        print("// ========================================")
-        print("// Starting NFS MITM API...")
-        print("// [*] IP ADDR:\t\tlocalhost:" + str(self.port))
-        print("// [*] MNT URL:\t\t" + self.mount_url)
-        print("// ========================================")
+        print_console("// ========================================")
+        print_console("// Starting NFS MITM API...")
+        print_console("// [*] IP ADDR:\t\tlocalhost:" + str(self.port))
+        print_console("// [*] MNT URL:\t\t" + self.mount_url)
+        print_console("// ========================================")
 
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.bind(('', self.port))
@@ -36,5 +38,5 @@ class NfspionageApi:
         # listen for requests on localhost:2050
         while True:
             client_socket, client_address = server_socket.accept()
-            print("[* API ] sending mount url (" + self.mount_url + ") to " + str(client_address))
+            print_console("sending mount url (" + self.mount_url + ") to " + str(client_address), tag="API")
             client_socket.send(self.mount_url.encode())

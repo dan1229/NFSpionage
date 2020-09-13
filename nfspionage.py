@@ -1,9 +1,7 @@
 import _thread
-from _signal import SIGTERM
 from datetime import datetime
 
-from psutil import process_iter
-
+from helpers import kill_process_on_port, print_console
 from port_forwarder import MitmForwarder
 
 PORT_RPC = 111
@@ -16,28 +14,11 @@ PORT_NFS = 2049
 '''
 
 
-# kills process on specified port number
-def kill_process_on_port(port):
-	found = False
-	try:
-		for proc in process_iter():
-			for conns in proc.connections(kind='inet'):
-				if conns.laddr.port == port:
-					found = True
-					print("[* INF ] killing process on port " + str(port))
-					proc.send_signal(SIGTERM)
-		if not found:
-			print("[* INF ] no process found to kill on port " + str(port))
-	except Exception as e:
-		print("[* EXP ] exception while trying to kill process on port " + str(port) + "\n" + str(e))
-
-
 def run(ip_nfs_server):
-	print("// ========================================================================")
-	print("Starting NFS MITM @ " + str(datetime.now()) + "\n")
-	print("SERVER IP:\t\t" + ip_nfs_server)
-	print("NFS PORT:\t\t" + str(PORT_NFS))
-	print("")
+	print_console("// ========================================================================")
+	print_console("Starting NFS MITM @ " + str(datetime.now()) + "\n")
+	print_console("SERVER IP:\t\t" + ip_nfs_server)
+	print_console("NFS PORT:\t\t" + str(PORT_NFS))
 
 	# kill processes on either port just in case
 	kill_process_on_port(PORT_NFS)
