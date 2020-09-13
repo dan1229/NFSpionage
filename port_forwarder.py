@@ -7,7 +7,7 @@ from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
-from scapy.layers.inet import IP
+from scapy.layers.inet import IP, TCP
 from scapy.layers.l2 import Ether
 from scapy.sendrecv import sniff, sr1
 
@@ -88,6 +88,7 @@ class MitmForwarder:
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
 				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.client_address)))
 				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.server_address)))
+				pkt[TCP].dport = 2049
 				print("\t - forwarding to " + str(self.server_address))
 			else:  # packets is from server -> forward to client
 				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.server_address)))
@@ -95,6 +96,7 @@ class MitmForwarder:
 				print("\t - forwarding to " + str(self.client_address))
 
 			# send packet
+			pkt.show()
 			sr1(pkt)
 
 	# tcp_listen ============================================== #
