@@ -57,8 +57,10 @@ class MitmForwarder:
 
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
-		while True:
-			sniff(count=1, filter=str_filter, prn=self.transfer_tcp)
+		print("[* INF ] STARTING scapy packet sniffing")
+		print("[* INF ] sniff filter: " + str(str_filter))
+		sniff(count=0, filter=str_filter, prn=self.transfer_tcp)
+		print("[* INF ] STOPPING scapy packet sniffing")
 
 	# transfer_tcp ============================================== #
 	# scapy sniff callback function to filter and modify incoming packets
