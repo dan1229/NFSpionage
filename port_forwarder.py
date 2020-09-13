@@ -58,7 +58,7 @@ class MitmForwarder:
 		# listen with scapy to actually forward and process
 		str_filter = "tcp and port " + str(self.target_port)
 		print("[* INF ] STARTING scapy packet sniffing")
-		print("[* INF ] sniff filter: " + str(str_filter))
+		print("[* INF ] FILTER: " + str(str_filter))
 		sniff(count=0, filter=str_filter, prn=self.transfer_tcp)
 		print("[* INF ] STOPPING scapy packet sniffing")
 
@@ -85,8 +85,6 @@ class MitmForwarder:
 
 			# change src and dst IP appropriately
 			self.update_client_address(pkt)
-			print("client: " + self.client_address)
-			print("server: " + self.server_address)
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
 				pkt[IP].src = hex(int(ipaddress.IPv4Address(self.client_address)))
 				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.server_address)))
@@ -117,8 +115,9 @@ class MitmForwarder:
 				self.tcp_listen(self.server_address, client_address[1])
 		else:  # setup 'client' to listen on passed port
 			try:
-				sock.connect((host, port))
-				sock.recv(64512)
+				while True:
+					sock.connect((host, port))
+					sock.recv(64512)
 			except Exception:
 				pass
 
