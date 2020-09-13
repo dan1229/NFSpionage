@@ -67,10 +67,9 @@ class MitmForwarder:
 	# RETURN
 	# void
 	def transfer_tcp(self, pkt):
-		pkt.show()
-		if Ether in pkt:
-			pkt[Ether].checksum = None  # ask scapy to regenerate
 		if IP in pkt:  # only process packets with IP layer
+			pkt.show()
+
 			# try to filter
 			try:
 				self.filter_packets(pkt)
@@ -84,6 +83,8 @@ class MitmForwarder:
 
 			# change src and dst IP appropriately
 			self.update_client_address(pkt)
+			print("client: " + self.client_address)
+			print("server: " + self.server_address)
 			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
 				pkt[IP].src = hex(int(ipaddress.IPv4Address(self.client_address)))
 				pkt[IP].dst = hex(int(ipaddress.IPv4Address(self.server_address)))
@@ -122,6 +123,7 @@ class MitmForwarder:
 	# ======================================================== #
 	# ==================== UDP FORWARDING ==================== #
 	# ======================================================== #
+
 	# udp_proxy ============================================== #
 	# create udp servers to listen for and forward connections to target
 	def udp_proxy(self):
