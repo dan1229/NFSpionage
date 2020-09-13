@@ -33,13 +33,13 @@ class MitmForwarder:
 		self.spoof_address = remote_ip
 		print_console("// ========================================")
 		print_console("// Starting MitmForwarder", trailing_dots=True)
-		print_console("// [*] LOC Addr:\t127.0.0.1:" + str(port))
-		print_console("// [*] REM Addr:\t" + remote_ip + ":" + str(port))
+		print_console("// LOCAL Addr:\t127.0.0.1:" + str(port))
+		print_console("// REMOTE Addr:\t" + remote_ip + ":" + str(port))
 		if udp:
-			print_console("// [*] PROT:\t\tUDP")
+			print_console("// PROTOCOL:\t\tUDP")
 			self.udp_proxy()
 		else:
-			print_console("// [*] PROT:\t\tTCP")
+			print_console("// PROTOCOL:\t\tTCP")
 			self.tcp_proxy()
 		print("// ========================================")
 
@@ -53,7 +53,7 @@ class MitmForwarder:
 	# tcp_proxy ============================================== #
 	# create tcp servers to listen for and forward connections to target
 	def tcp_proxy(self):
-		print_console("// tcp_proxy ====================================")
+		print_console("// tcp_proxy ==============================")
 
 		# create thread for python socket to "accept" messages
 		threading.Thread(target=self.tcp_listen, args=(self.target_port,)).start()
@@ -64,7 +64,7 @@ class MitmForwarder:
 		print_console("STARTING scapy packet sniffing", trailing_dots=True)
 		sniff(count=0, filter=str_filter, prn=self.transfer_tcp)
 		print_console("STOPPING scapy packet sniffing")
-		print_console("// END tcp_proxy ====================================")
+		print_console("// END tcp_proxy ==========================")
 
 	# transfer_tcp ============================================== #
 	# scapy sniff callback function to filter and modify incoming packets
@@ -147,7 +147,7 @@ class MitmForwarder:
 		# filter path, start mitm API
 		path = self.filter_mount_path(pkt)
 		if path != -1:  # if proper mount path, start API on path for clients
-			print_console("starting NFS MITM API on path \'" + path + "\'", trailing_dots=True)
+			print_console("STARTING NFS MITM API on path \'" + path + "\'", trailing_dots=True)
 			_thread.start_new_thread(NfspionageApi, (self.server_address, path))
 
 	# filter_mount_path =========================================== #

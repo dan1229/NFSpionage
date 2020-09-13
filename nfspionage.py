@@ -15,10 +15,11 @@ PORT_NFS = 2049
 
 
 def run(ip_nfs_server):
-	print_console("// ========================================================================")
-	print_console("Starting NFS MITM @ " + str(datetime.now()) + "\n")
-	print_console("SERVER IP:\t\t" + ip_nfs_server)
-	print_console("NFS PORT:\t\t" + str(PORT_NFS))
+	print_console("// ========================================================================", tag="START", sym="+")
+	print_console("Starting NFS MITM @ " + str(datetime.now()), tag="START", sym="+")
+	print_console("SERVER IP:\t\t" + ip_nfs_server, tag="START", sym="+")
+	print_console("NFS PORT:\t\t" + str(PORT_NFS), tag="START", sym="+")
+	print_console("RPC PORT:\t\t" + str(PORT_RPC), tag="START", sym="+")
 
 	# kill processes on either port just in case
 	kill_process_on_port(PORT_NFS)
