@@ -16,7 +16,7 @@ from scapy.sendrecv import send
 def start_arp_spoof(router_ip='172.16.119.1'):
 	# get ip addresses of machines on local network
 	print("// ARP SPOOF ========================================")
-	full_results = [re.findall('^[\w\?\.]+|(?<=\s)\([\d\.]+\)|(?<=at\s)[\w\:]+', i) for i in os.popen('arp -a')]
+	full_results = [re.findall('^[\w\?\.]+|(?<=\s)\([\d\.]+\)|(?<=at\s)[\w\:]+', i) for i in os.popen('ip n show')]
 	final_results = [dict(zip(['IP', 'LAN_IP', 'MAC_ADDRESS'], i)) for i in full_results]
 	final_results = [{**i, **{'LAN_IP': i['LAN_IP'][1:-1]}} for i in final_results]
 
