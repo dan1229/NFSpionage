@@ -70,7 +70,6 @@ def menu(nfs_context=None):
     print("// F -\tFind")
     print("// L -\tList")
     print("// C -\tCreate (File)")
-    # print("// E -\tEdit (File)")
     print("// D -\tDelete")
     print("//")
     print("// M -\tPrint this menu")
@@ -101,7 +100,7 @@ def print_title(title=""):
 # ==================== MAIN ==================== #
 
 
-def get_mount_point():
+def get_mount_point_from_api():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(('localhost', 2050))
     data, address = sock.recvfrom(65412)
@@ -111,8 +110,8 @@ def get_mount_point():
 
 def run(server_ip, mount_point):
     if server_ip == '127.0.0.1' and mount_point == '/mnt/':  # credentials not provided, use api
-        print("Getting NFS MOUNT info from MITM API...")
-        mount_url = get_mount_point()
+        print("Getting NFS MOUNT info from API...")
+        mount_url = get_mount_point_from_api()
     else:  # credentials provided
         if mount_point[0] != '/':
             mount_point = '/' + mount_point
@@ -123,7 +122,7 @@ def run(server_ip, mount_point):
     menu(nfs)
 
     while True:
-        print("Choose option")
+        print("===========================\nChoose option")
         choice = input(">> ")
         func = case_statement(choice)
         func(nfs)
@@ -141,7 +140,7 @@ if __name__ == "__main__":
     parser.add_option(
         '-m', '--mount-point',
         dest='mount_point', default='/mnt/',
-        help='Filepath to mount for NFS connection')
+        help='ABSOLUTE, remote filepath to mount')
     options, args = parser.parse_args()
 
     run(options.server_ip, options.mount_point)
